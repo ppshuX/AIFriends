@@ -10,7 +10,7 @@
 
 1. **配置服务器信息**（可选）
    
-   创建 `deploy-config.ps1` 文件（已配置在 `.gitignore` 中，不会被提交）：
+   如果需要自定义配置，可以创建 `deploy-config.ps1` 文件（已配置在 `.gitignore` 中，不会被提交）：
    ```powershell
    $SERVER_USER = "acs"
    $SERVER_HOST = "tcserver"  # 或使用 IP 地址，如 "123.456.789.0"
@@ -23,28 +23,6 @@
 2. **执行部署脚本**
    ```powershell
    .\deploy-frontend.ps1
-   ```
-
-### Linux/Mac (Bash)
-
-1. **配置服务器信息**
-   
-   编辑 `deploy-frontend.sh` 文件，修改配置区域：
-   ```bash
-   SERVER_USER="acs"
-   SERVER_HOST="tcserver"
-   SERVER_PORT="22"
-   SERVER_PATH="~/AIFriends/backend/static/frontend"
-   ```
-
-2. **添加执行权限**
-   ```bash
-   chmod +x deploy-frontend.sh
-   ```
-
-3. **执行部署脚本**
-   ```bash
-   ./deploy-frontend.sh
    ```
 
 ## 📋 脚本功能
