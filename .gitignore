@@ -5,3 +5,7 @@ db.sqlite3
 media/
 staticfiles/
 static/
+
+# 部署配置文件（包含敏感信息）
+deploy-config.ps1
+deploy-config.sh
