@@ -1,9 +1,11 @@
 <script setup>
-import { RouterView } from 'vue-router'
+import NavBar from "@/components/navbar/NavBar.vue";
 </script>
 
 <template>
-  <NavBar />
+  <NavBar>
+    页面内容333
+  </NavBar>
 </template>
 
 <style scoped>
