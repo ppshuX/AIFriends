@@ -30,7 +30,9 @@ export const useUserStore = defineStore('user', () => {
         photo.value = "";
         profile.value = "";
         accessToken.value = "";
-        hasPulledUserInfo.value = false;
+        // 仍然保留 “已经拉取过用户信息” 的标记，
+        // 这样导航栏可以立刻根据未登录状态展示“登录”按钮
+        hasPulledUserInfo.value = true;
     }
 
     function setHasPulledUserInfo(newStatus) {
