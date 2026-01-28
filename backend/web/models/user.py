@@ -12,7 +12,8 @@ def photo_upload_to(instance, filename):
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    photo = models.ImageField(default='user/photos/default.png', upload_to='photo_upload_to')
+    # 默认头像路径相对于 MEDIA_ROOT，上传头像时使用 photo_upload_to
+    photo = models.ImageField(default='user/photos/default.png', upload_to=photo_upload_to)
     profile = models.TextField(default='谢谢你的关注', max_length=500)
     create_time = models.DateTimeField(default=now)
     update_time = models.DateTimeField(default=now)

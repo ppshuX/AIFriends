@@ -1,38 +1,49 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from django.conf import settings
+from rest_framework_simplejwt.tokens import RefreshToken
 
-import settings
 
-
-class RefreshToken(APIView):
+class RefreshTokenView(APIView):
     def post(self, request):
-        try:
-            refresh_token = request.COOKIES.get['refresh_token']
-            if not refresh_token:
-                return Response({
-                    'result': 'refresh token 不存在'
-                }, status=401)
-            refresh = RefreshToken(refresh_token)
-            if settings.SIMPLE_JWT('ROTATE_FRESH_TOKEN'):
-                refresh.set_jti()
-                response = Response({
-                    'result': 'success',
-                    'access': str(refresh.access_token),
-                })
-                response.set_cookie(
-                    key='refresh_token',
-                    value=str(refresh),
-                    httponly=True,
-                    samesite='Lax',
-                    secure=True,
-                    max_age=86400 * 7,
-                )
-                return response
-            return Response({
-                'result': 'success',
-            })
+        refresh_token = request.COOKIES.get("refresh_token")
+        if not refresh_token:
+            return Response(
+                {"result": "refresh token 不存在"},
+                status=401,
+            )
 
-        except:
-            return Response({
-                'result': 'refresh token 过期了',
-            }, status=401)
+        try:
+            token = RefreshToken(refresh_token)
+        except Exception:
+            return Response(
+                {"result": "refresh token 过期了"},
+                status=401,
+            )
+
+        # 是否旋转 refresh token
+        if settings.SIMPLE_JWT.get("ROTATE_REFRESH_TOKENS"):
+            token.set_jti()
+            response = Response(
+                {
+                    "result": "success",
+                    "access": str(token.access_token),
+                }
+            )
+            response.set_cookie(
+                key="refresh_token",
+                value=str(token),
+                httponly=True,
+                samesite="Lax",
+                secure=True,
+                max_age=86400 * 7,
+            )
+            return response
+
+        # 不旋转时也返回新的 access token
+        return Response(
+            {
+                "result": "success",
+                "access": str(token.access_token),
+            }
+        )
