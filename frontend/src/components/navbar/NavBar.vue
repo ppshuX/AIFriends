@@ -21,8 +21,15 @@
         </div>
 
         <div class="navbar-end">
-          <RouterLink :to="{ name: 'register-index' }" active-class="Button-active" class="btn btn-ghost text-lg">注册</RouterLink>
-          <RouterLink :to="{ name: 'login-index' }" active-class="Button-active" class="btn btn-ghost text-lg">登录</RouterLink>
+          <RouterLink v-if="user.isLogin()" :to="{ name: 'create-index' }" active-class="Button-active" class="btn btn-ghost text-lg">
+            <CreateIcon />
+            创作
+          </RouterLink>
+
+          <RouterLink v-if="!user.isLogin()" :to="{ name: 'login-index' }" active-class="Button-active" class="btn btn-ghost text-lg">
+            登录
+          </RouterLink>
+          <UserMenu v-if="user.isLogin()" />
         </div>
       </nav>
       <slot></slot>
@@ -64,6 +71,10 @@ import HomepageIcon from "@/components/navbar/icons/HomepageIcon.vue";
 import FriendIcon from "@/components/navbar/icons/FriendIcon.vue";
 import CreateIcon from "@/components/navbar/icons/CreateIcon.vue";
 import SearchIcon from "@/components/navbar/icons/SearchIcon.vue";
+import {useUserStore} from "@/stores/user.js";
+import UserMenu from "@/components/navbar/UserMenu.vue";
+
+const user = useUserStore();
 </script>
 
 <style scoped>
