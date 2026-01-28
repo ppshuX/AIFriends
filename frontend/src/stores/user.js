@@ -1,5 +1,5 @@
-import {defineStore} from "pinia";
-import {ref} from "vue";
+import { defineStore } from "pinia";
+import { ref } from "vue";
 
 export const useUserStore = defineStore('user', () => {
     const id = ref(0);
@@ -7,6 +7,7 @@ export const useUserStore = defineStore('user', () => {
     const photo = ref("");
     const profile = ref("");
     const accessToken = ref("");
+    const hasPulledUserInfo = ref(false);
 
     function isLogin() {
         return !!accessToken.value
@@ -27,8 +28,13 @@ export const useUserStore = defineStore('user', () => {
         id.value = 0;
         username.value = "";
         photo.value = "";
+        profile.value = "";
         accessToken.value = "";
-        accessToken.value = "";
+        hasPulledUserInfo.value = false;
+    }
+
+    function setHasPulledUserInfo(newStatus) {
+        hasPulledUserInfo.value = newStatus;
     }
 
     return {
@@ -37,9 +43,11 @@ export const useUserStore = defineStore('user', () => {
         photo,
         profile,
         accessToken,
+        hasPulledUserInfo,
         isLogin,
         setAccessToken,
         setUserInfo,
         logout,
+        setHasPulledUserInfo,
     }
 })

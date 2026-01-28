@@ -36,12 +36,13 @@ class Login(APIView):
                 'photo': photo_url,
                 'profile': profile,
             })
+            # 开发环境使用 http，不能设置 secure=True，否则浏览器不会发送 cookie
             response.set_cookie(
                 key='refresh_token',
                 value=str(refresh),
                 httponly=True,
                 samesite='Lax',
-                secure=True,
+                secure=False,   # 本地开发必须为 False，生产环境再改回 True
                 max_age=86400 * 7,
             )
             return response

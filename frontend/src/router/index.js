@@ -28,6 +28,12 @@ router.beforeEach((to, from, next) => {
 
   const needLogin = to.meta.needLogin
 
+  // 刷新页面时，先等 App.vue 里 get_user_info / 刷新 token 的流程跑完
+  // 只有在已经确认拉取过用户信息之后，才根据 isLogin 做跳转判断
+  if (!user.hasPulledUserInfo) {
+    return next()
+  }
+
   // 需要登录的页面且当前未登录，跳转到登录页，并记录原目标地址
   if (needLogin && !user.isLogin()) {
     return next({
