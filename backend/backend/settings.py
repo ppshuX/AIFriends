@@ -132,7 +132,8 @@ STATICFILES_DIRS = [  # 开发阶段使用；生产时 collectstatic 会把这�
     BASE_DIR / 'static',
 ]
 
-MEDIA_URL = 'http://127.0.0.1:8000/media/'
+# 使用相对路径，本地与线上均按当前域名访问 /media/
+MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 
