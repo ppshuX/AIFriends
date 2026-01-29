@@ -2,7 +2,13 @@ __pycache__/
 *.py[cod]
 .idea/
 db.sqlite3
-media/
+# 忽略 media，但保留默认头像供部署
+backend/media/*
+!backend/media/user/
+backend/media/user/*
+!backend/media/user/photos/
+backend/media/user/photos/*
+!backend/media/user/photos/default.png
 staticfiles/
 static/
 
