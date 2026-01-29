@@ -85,6 +85,8 @@ DATABASES = {
     }
 }
 
+# 消除 models.W042 警告：显式指定自增主键类型
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
@@ -123,9 +125,10 @@ USE_TZ = True
 
 # 设置static和media静态文件路径
 STATIC_URL = 'static/'
-# STATIC_ROOT = BASE_DIR / 'static'  # 生产阶段使用
+# collectstatic 收集到的目录，必须与 STATICFILES_DIRS 里的路径不同
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-STATICFILES_DIRS = [  # 开发阶段使用，生产阶段需要注释掉
+STATICFILES_DIRS = [  # 开发阶段使用；生产时 collectstatic 会把这些目录收进 STATIC_ROOT
     BASE_DIR / 'static',
 ]
 
