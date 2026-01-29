@@ -38,32 +38,36 @@ AIFriends 是一个基于大语言模型的虚拟角色创作分享平台。用�
 ```
 AIFriends/
 ├── backend/                 # Django 后端项目
-│   ├── backend/            # Django 项目配置
-│   │   ├── settings.py     # 项目设置
-│   │   ├── urls.py         # 主 URL 配置
-│   │   └── ...
-│   ├── web/                # Web 应用
-│   │   ├── views/          # 视图函数
-│   │   │   └── index.py   # 首页视图
-│   │   ├── templates/      # 模板文件
-│   │   │   └── index.html # 前端入口模板
-│   │   ├── urls.py         # URL 路由
-│   │   └── models.py       # 数据模型
-│   ├── static/             # 静态文件目录
-│   │   └── frontend/       # 前端构建产物
-│   ├── manage.py           # Django 管理脚本
-│   └── db.sqlite3          # SQLite 数据库
-├── frontend/               # Vue3 前端项目
-│   ├── src/                # 源代码目录
-│   │   ├── components/     # Vue 组件
-│   │   ├── views/          # 页面视图
-│   │   ├── router/         # 路由配置
-│   │   ├── stores/         # Pinia 状态管理
-│   │   └── main.js         # 入口文件
-│   ├── public/             # 公共资源
-│   ├── package.json        # 依赖配置
-│   └── vite.config.js      # Vite 配置
-└── README.md               # 项目说明文档
+│   ├── backend/             # Django 项目配置
+│   │   ├── settings.py      # 项目设置
+│   │   ├── urls.py          # 主 URL 配置
+│   │   └── wsgi.py          # WSGI 入口
+│   ├── web/                 # Web 应用
+│   │   ├── views/           # 视图（含 user/account 登录注册等）
+│   │   ├── templates/       # 模板（index.html 为前端入口）
+│   │   ├── urls.py          # URL 路由
+│   │   └── models/          # 数据模型（如 UserProfile）
+│   ├── static/              # 静态文件（Vite 构建输出到此）
+│   │   └── frontend/        # 前端构建产物
+│   ├── staticfiles/        # collectstatic 收集目录（生产）
+│   ├── media/               # 用户上传文件（如头像）
+│   ├── manage.py
+│   └── db.sqlite3
+├── frontend/                # Vue3 前端项目
+│   ├── src/
+│   │   ├── components/     # 组件（NavBar、UserMenu 等）
+│   │   ├── views/           # 页面（首页、登录、注册等）
+│   │   ├── router/          # 路由与守卫
+│   │   ├── stores/          # Pinia（user 等）
+│   │   └── js/http/         # axios 封装（api.js）
+│   ├── package.json         # 含 postbuild：同步 Django 模板
+│   └── vite.config.js       # 构建输出到 backend/static/frontend
+├── scripts/                 # 部署与构建脚本
+│   ├── uwsgi.ini            # uWSGI 配置
+│   └── update-django-static.js  # 构建后更新 Django 模板中的静态路径
+├── nginx.conf               # Nginx 配置示例
+├── deploy-frontend.ps1      # 前端构建与部署脚本（Windows）
+└── README.md
 ```
 
 ## 🚀 快速开始
@@ -123,13 +127,8 @@ cd frontend
 npm install
 
 # 构建前端项目（生产环境）
+# 构建产物输出到 backend/static/frontend/，并自动更新 backend/web/templates/index.html 中的静态路径
 npm run build
-
-# 将构建产物复制到后端 static 目录
-# Windows:
-xcopy /E /I dist\* ..\backend\static\frontend\
-# Linux/Mac:
-cp -r dist/* ../backend/static/frontend/
 ```
 
 #### 4. 运行项目
@@ -164,7 +163,8 @@ python manage.py runserver
 
 - **静态文件配置**：
   - `STATIC_URL = 'static/'`
-  - `STATICFILES_DIRS = [BASE_DIR / 'static']`
+  - `STATIC_ROOT = BASE_DIR / 'staticfiles'`（生产环境 collectstatic 目标）
+  - `STATICFILES_DIRS = [BASE_DIR / 'static']`（开发时前端构建产物在 static/frontend）
 
 - **跨域配置**：
   - `CORS_ALLOWED_ORIGINS`：允许的前端域名
@@ -179,18 +179,23 @@ python manage.py runserver
 主要配置文件：`frontend/vite.config.js`
 
 - 开发服务器端口：5173
-- 构建输出目录：`dist`
+- 构建输出目录：`../backend/static/frontend`（与 Django 静态目录一致）
+- `npm run build` 后会自动执行 `scripts/update-django-static.js`，同步 Django 模板中的 js/css 路径
 
 ## 📡 API 接口
 
-### 认证接口
+### 用户认证
 
-- `POST /api/token/` - 获取 JWT Token
-- `POST /api/token/refresh/` - 刷新 Token
+- `POST /api/user/account/login/` - 登录（返回 access，cookie 设置 refresh_token）
+- `POST /api/user/account/register/` - 注册
+- `POST /api/user/account/logout/` - 退出（需登录，删除 refresh_token cookie）
+- `POST /api/user/account/refresh_token/` - 使用 cookie 中的 refresh_token 刷新 access
+- `GET /api/user/account/get_user_info/` - 获取当前用户信息（需登录）
 
-### 页面路由
+### 页面与静态
 
-- `GET /` - 首页（返回前端应用）
+- `GET /` 及前端路由 - 返回前端 SPA 入口，由 Vue Router 接管
+- `/static/`、`/media/` - 静态与媒体文件
 
 ## 🔧 开发说明
 
@@ -203,7 +208,7 @@ cd frontend
 npm run dev
 ```
 
-开发完成后需要构建并复制到后端 static 目录。
+开发完成后执行 `npm run build`，构建产物会输出到 `backend/static/frontend/`，并自动更新 `backend/web/templates/index.html` 中的静态引用。
 
 ### 后端开发
 
@@ -218,12 +223,20 @@ python manage.py runserver
 
 项目使用 Django 的静态文件系统，模板中使用 `{% load static %}` 和 `{% static %}` 标签加载静态资源。
 
+## 🚢 部署概要
+
+1. **克隆**：`git clone <repo>`，进入项目目录
+2. **后端**：`cd backend` → 虚拟环境、`pip install` 依赖、`python manage.py migrate`、`python manage.py collectstatic --noinput`
+3. **前端**：`cd frontend` → `npm install`、`npm run build`（会输出到 `backend/static/frontend/` 并更新 Django 模板）
+4. **运行**：使用 `scripts/uwsgi.ini` 启动 uWSGI（需先按服务器路径修改 `chdir` 等），Nginx 参考 `nginx.conf` 配置反向代理与静态/媒体路径；`ALLOWED_HOSTS` 需包含域名与服务器 IP
+
 ## 📝 注意事项
 
-1. **开发环境**：当前配置为开发环境（`DEBUG = True`），生产环境需要修改相关配置
+1. **开发环境**：当前配置为开发环境（`DEBUG = True`），生产环境需设置 `DEBUG = False`、`ALLOWED_HOSTS`
 2. **数据库**：开发环境使用 SQLite，生产环境建议使用 PostgreSQL 或 MySQL
-3. **静态文件**：生产环境建议使用 Nginx 等 Web 服务器处理静态文件
+3. **静态文件**：生产环境使用 Nginx 提供 `/static`、`/media`，Django 端执行 `python manage.py collectstatic`
 4. **密钥安全**：生产环境务必修改 `SECRET_KEY` 并妥善保管
+5. **部署**：项目内提供 `nginx.conf`、`scripts/uwsgi.ini` 示例，部署时按实际路径修改后使用
 
 ## 📚 相关资源
 
