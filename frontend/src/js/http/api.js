@@ -9,9 +9,10 @@
 */
 
 import axios from "axios"
-import {useUserStore} from "@/stores/user.js";
+import { useUserStore } from "@/stores/user.js";
 
-const BASE_URL = 'http://127.0.0.1:8000'
+// 开发环境请求本地 Django；生产环境用相对路径，请求当前域名（同源）
+const BASE_URL = import.meta.env.DEV ? 'http://127.0.0.1:8000' : ''
 
 const api = axios.create({
     baseURL: BASE_URL,
@@ -70,7 +71,7 @@ api.interceptors.response.use(
                     axios.post(
                         `${BASE_URL}/api/user/account/refresh_token/`,
                         {},
-                        {withCredentials: true, timeout: 5000}
+                        { withCredentials: true, timeout: 5000 }
                     ).then(res => {
                         user.setAccessToken(res.data.access)
                         onRefreshed(res.data.access)
