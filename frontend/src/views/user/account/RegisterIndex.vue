@@ -90,7 +90,7 @@ async function handleRegister() {
       <button class="btn btn-neutral mt-4 w-full">注册</button>
       <div class="flex justify-end mt-2">
         <RouterLink
-          :to="{ name: 'login-index' }"
+          :to="{ name: 'user-account-login-index' }"
           class="btn btn-sm btn-ghost text-base-content/70"
         >
           登录

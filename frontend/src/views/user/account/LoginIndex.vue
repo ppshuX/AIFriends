@@ -55,7 +55,7 @@ async function handleLogin() {
 
       <button class="btn btn-neutral mt-4 w-full">登录</button>
       <div class="flex justify-end mt-2">
-        <RouterLink :to="{ name: 'register-index' }" class="btn btn-sm btn-ghost text-base-content/70">
+        <RouterLink :to="{ name: 'user-account-register-index' }" class="btn btn-sm btn-ghost text-base-content/70">
           注册
         </RouterLink>
       </div>

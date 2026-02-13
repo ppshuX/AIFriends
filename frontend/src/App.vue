@@ -26,7 +26,7 @@ onMounted(async () => {
     // 如果当前路由需要登录但用户未登录，则跳转到登录页
     if (route.meta.needLogin && !user.isLogin()) {
       await router.replace({
-        name: "login-index",
+        name: "user-account-login-index",
       });
     }
   }

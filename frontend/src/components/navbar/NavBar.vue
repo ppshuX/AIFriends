@@ -26,7 +26,7 @@
             创作
           </RouterLink>
 
-          <RouterLink v-if="user.hasPulledUserInfo && !user.isLogin()" :to="{ name: 'login-index' }" active-class="Button-active" class="btn btn-ghost text-lg">
+          <RouterLink v-if="user.hasPulledUserInfo && !user.isLogin()" :to="{ name: 'user-account-login-index' }" active-class="Button-active" class="btn btn-ghost text-lg">
             登录
           </RouterLink>
           <UserMenu v-else-if="user.isLogin()" />

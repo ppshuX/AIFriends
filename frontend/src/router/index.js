@@ -13,12 +13,12 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     { path: '/', component: HomepageIndex, name: 'homepage-index', meta: { needLogin: false } },
-    { path: '/friend', component: FriendIndex, name: 'friend-index', meta: { needLogin: true } },
-    { path: '/create', component: CreateIndex, name: 'create-index', meta: { needLogin: true } },
-    { path: '/login', component: LoginIndex, name: 'login-index', meta: { needLogin: false } },
-    { path: '/register', component: RegisterIndex, name: 'register-index', meta: { needLogin: false } },
-    { path: '/user/space', component: SpaceIndex, name: 'space-index', meta: { needLogin: true } },
-    { path: '/profile', component: ProfileIndex, name: 'profile-index', meta: { needLogin: true } },
+    { path: '/friend/', component: FriendIndex, name: 'friend-index', meta: { needLogin: true } },
+    { path: '/create/', component: CreateIndex, name: 'create-index', meta: { needLogin: true } },
+    { path: '/login/', component: LoginIndex, name: 'user-account-login-index', meta: { needLogin: false } },
+    { path: '/register/', component: RegisterIndex, name: 'user-account-register-index', meta: { needLogin: false } },
+    { path: '/user/space/:user_id/', component: SpaceIndex, name: 'user-space-index', meta: { needLogin: true } },
+    { path: '/profile/', component: ProfileIndex, name: 'user-profile-index', meta: { needLogin: true } },
     { path: '/:pathMatch(.*)*', component: NotFoundIndex, name: 'not-found' },
   ],
 })
@@ -37,13 +37,13 @@ router.beforeEach((to, from, next) => {
   // 需要登录的页面且当前未登录，跳转到登录页，并记录原目标地址
   if (needLogin && !user.isLogin()) {
     return next({
-      name: 'login-index',
+      name: 'user-account-login-index',
       query: { redirect: to.fullPath },
     })
   }
 
   // 已登录用户访问登录/注册页面时，直接跳到首页
-  if (user.isLogin() && (to.name === 'login-index' || to.name === 'register-index')) {
+  if (user.isLogin() && (to.name === 'user-account-login-index' || to.name === 'user-account-register-index')) {
     return next({ name: 'homepage-index' })
   }
 
