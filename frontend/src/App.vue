@@ -18,7 +18,10 @@ onMounted(async () => {
       user.setUserInfo(data);
     }
   } catch (error) {
-    console.error(error);
+    // 401 表示未登录或 token 过期，属正常情况，不刷屏
+    if (error.response?.status !== 401) {
+      console.error(error);
+    }
   } finally {
     // 按你原先的设计，标记已经尝试拉取过用户信息
     user.setHasPulledUserInfo(true);

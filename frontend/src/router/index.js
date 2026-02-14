@@ -6,7 +6,7 @@ import CreateIndex from "@/views/create/CreateIndex.vue"
 import LoginIndex from "@/views/user/account/LoginIndex.vue"
 import RegisterIndex from "@/views/user/account/RegisterIndex.vue"
 import SpaceIndex from "@/views/user/space/SpaceIndex.vue"
-import ProfileIndex from "@/views/profile/ProfileIndex.vue"
+import ProfileIndex from "@/views/user/profile/ProfileIndex.vue"
 import NotFoundIndex from "@/views/error/NotFoundIndex.vue"
 
 const router = createRouter({
@@ -18,7 +18,7 @@ const router = createRouter({
     { path: '/login/', component: LoginIndex, name: 'user-account-login-index', meta: { needLogin: false } },
     { path: '/register/', component: RegisterIndex, name: 'user-account-register-index', meta: { needLogin: false } },
     { path: '/user/space/:user_id/', component: SpaceIndex, name: 'user-space-index', meta: { needLogin: true } },
-    { path: '/profile/', component: ProfileIndex, name: 'user-profile-index', meta: { needLogin: true } },
+    { path: '/user/profile/', component: ProfileIndex, name: 'user-profile-index', meta: { needLogin: true } },
     { path: '/:pathMatch(.*)*', component: NotFoundIndex, name: 'not-found' },
   ],
 })
