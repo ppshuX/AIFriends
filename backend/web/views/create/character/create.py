@@ -6,16 +6,16 @@ from web.models.character import Character
 from web.models.user import UserProfile
 
 
-class  CreateCharacterView(APIView):
+class CreateCharacterView(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):
         try:
-            user=request.user
-            user_profile=UserProfile.objects.get(user=user)
-            name=request.data.get('name').strip()
-            profile=request.data.get('profile').strip()
-            photo=request.FILES.get('photo', None)
-            background_image=request.FILES.get('background_image', None)
+            user = request.user
+            user_profile = UserProfile.objects.get(user=user)
+            name = request.data.get('name').strip()
+            profile = request.data.get('profile').strip()[:100000]
+            photo = request.FILES.get('photo', None)
+            background_image = request.FILES.get('background_image', None)
 
             if not name:
                 return Response({
@@ -23,7 +23,7 @@ class  CreateCharacterView(APIView):
                 })
             if not profile:
                 return Response({
-                    'result': '角色简介不能为空'
+                    'result': '角色介绍不能为空'
                 })
             if not photo:
                 return Response({
@@ -42,7 +42,7 @@ class  CreateCharacterView(APIView):
                 background_image=background_image,
             )
             return Response({
-                'result': 'success'
+                'result': 'success',
             })
         except:
             return Response({

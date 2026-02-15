@@ -21,7 +21,7 @@
         </div>
 
         <div class="navbar-end">
-          <RouterLink v-if="user.isLogin()" :to="{ name: 'create-index' }" active-class="Button-active" class="btn btn-ghost text-lg">
+          <RouterLink v-if="user.isLogin()" :to="{ name: 'update-character', params:{character_id:1} }" active-class="Button-active" class="btn btn-ghost text-lg">
             <CreateIcon />
             创作
           </RouterLink>

@@ -2,7 +2,7 @@ from django.urls import path, re_path
 
 from .views.create.character.create import CreateCharacterView
 from .views.create.character.get_single import GetSingleCharacterView
-from .views.create.character.remove import RemoveCharacter
+from .views.create.character.remove import RemoveCharacterView
 from .views.create.character.update import UpdateCharacterView
 from .views.index import index
 from .views.user.account.get_user_info import GetUserInfo
@@ -21,7 +21,7 @@ urlpatterns = [
 
     path('api/create/character/create/', CreateCharacterView.as_view()),
     path('api/create/character/update/', UpdateCharacterView.as_view()),
-    path('api/create/character/remove/', RemoveCharacter.as_view()),
+    path('api/create/character/remove/', RemoveCharacterView.as_view()),
     path('api/create/character/get_single/', GetSingleCharacterView.as_view()),
     path("", index, name="index"),
     path('api/user/profile/update/', UpdateProfile.as_view()),

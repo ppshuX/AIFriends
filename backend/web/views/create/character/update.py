@@ -11,7 +11,7 @@ class UpdateCharacterView(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):
         try:
-            character_id = request.data['character']
+            character_id = request.data['character_id']
             character = Character.objects.get(id=character_id, author__user=request.user)
             name = request.data['name'].strip()
             profile = request.data['profile'].strip()[:100000]
@@ -20,12 +20,11 @@ class UpdateCharacterView(APIView):
 
             if not name:
                 return Response({
-                    'result': '名字不能为空',
+                    'result': "名字不能为空"
                 })
-
             if not profile:
                 return Response({
-                    'result': '角色简介不能为空'
+                    'result': '角色介绍不能为空'
                 })
             if photo:
                 remove_old_photo(character.photo)
@@ -33,16 +32,14 @@ class UpdateCharacterView(APIView):
             if background_image:
                 remove_old_photo(character.background_image)
                 character.background_image = background_image
-
             character.name = name
             character.profile = profile
             character.update_time = now()
             character.save()
-
             return Response({
                 'result': 'success',
             })
-        except Exception:
+        except:
             return Response({
                 'result': '系统异常，请稍后重试'
             })

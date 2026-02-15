@@ -5,15 +5,17 @@ from django.utils.timezone import now, localtime
 
 from web.models.user import UserProfile
 
+
 def photo_upload_to(instance, filename):
     ext = filename.split('.')[-1]
     filename = f'{uuid.uuid4().hex[:10]}.{ext}'
-    return f'charactere/photos/{instance.author.user_id}_{filename}'
+    return f'character/photos/{instance.author.user_id}_{filename}'
+
 
 def background_image_upload_to(instance, filename):
     ext = filename.split('.')[-1]
     filename = f'{uuid.uuid4().hex[:10]}.{ext}'
-    return f'charactere/photos/{instance.author.user_id}_{filename}'
+    return f'character/background_images/{instance.author.user_id}_{filename}'
 
 
 class Character(models.Model):
@@ -25,6 +27,5 @@ class Character(models.Model):
     create_time = models.DateTimeField(default=now)
     update_time = models.DateTimeField(default=now)
 
-
     def __str__(self):
-        return f"self.author.user.username - {self.name} - {localtime(self.create_time).strftime('%Y-%m-%d %H:%M:%S')}"
+        return f"{self.author.user.username} - {self.name} - {localtime(self.create_time).strftime('%Y-%m-%d %H:%M:%S')}"
