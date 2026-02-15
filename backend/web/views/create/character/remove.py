@@ -7,11 +7,12 @@ from web.models.character import Character
 
 class RemoveCharacter(APIView):
     permission_classes = [IsAuthenticated]
-    def post(self,request):
+    def post(self, request):
         try:
-            character_id = request.data['character_id']
+            character_id = request.data.get('character_id')
             Character.objects.filter(pk=character_id, author__user=request.user).delete()
-        except:
+            return Response({'result': 'success'})
+        except Exception:
             return Response({
                 'result': '系统异常，请稍后重试'
             })

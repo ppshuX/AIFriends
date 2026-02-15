@@ -14,7 +14,7 @@ class  CreateCharacterView(APIView):
             user_profile=UserProfile.objects.get(user=user)
             name=request.data.get('name').strip()
             profile=request.data.get('profile').strip()
-            photo=request.data.FILES.get('photo', None)
+            photo=request.FILES.get('photo', None)
             background_image=request.FILES.get('background_image', None)
 
             if not name:
@@ -31,7 +31,7 @@ class  CreateCharacterView(APIView):
                 })
             if not background_image:
                 return Response({
-                    'reuslt': '聊天背景不能为空'
+                    'result': '聊天背景不能为空'
                 })
 
             Character.objects.create(
