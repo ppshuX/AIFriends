@@ -5,6 +5,9 @@ from .views.create.character.get_list import GetListCharacterView
 from .views.create.character.get_single import GetSingleCharacterView
 from .views.create.character.remove import RemoveCharacterView
 from .views.create.character.update import UpdateCharacterView
+from .views.friend.get_list import GetListFriendView
+from .views.friend.get_or_create import GetOrCreateFriendView
+from .views.friend.remove import RemoveFriendView
 from .views.homepage.index import HomepageIndexView
 from .views.index import index
 from .views.user.account.get_user_info import GetUserInfo
@@ -28,6 +31,9 @@ urlpatterns = [
     path('api/user/profile/update/', UpdateProfile.as_view()),
     path('api/create/character/get_list/', GetListCharacterView.as_view()),
     path('api/homepage/index/', HomepageIndexView.as_view()),
+    path('api/friend/get_or_create/', GetOrCreateFriendView.as_view()),
+    path('api/friend/remove/', RemoveFriendView.as_view()),
+    path('api/friend/get_list/', GetListFriendView.as_view()),
     path("", index, name="index"),
     # 前端 history 模式：除 media/static/assets 外的任意路径都交给前端路由
     re_path(r"^(?!media/|static/|assets/).*$", index),

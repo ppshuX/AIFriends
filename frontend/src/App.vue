@@ -11,14 +11,13 @@ const router = useRouter();
 
 onMounted(async () => {
   try {
-    // 修正 URL：使用后端实际路径 /api/user/account/get_user_info/
     const res = await api.get("/api/user/account/get_user_info/");
     const data = res.data;
     if (data.result === "success") {
       user.setUserInfo(data);
     }
   } catch (error) {
-    // 401 表示未登录或 token 过期，属正常情况，不刷屏
+    // 401 表示未登录或 token 过期，属正常情况
     if (error.response?.status !== 401) {
       console.error(error);
     }
