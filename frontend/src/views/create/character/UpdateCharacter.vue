@@ -59,6 +59,7 @@ async function handleUpdate() {
     if (photo !== character.value.photo) {
       formData.append('photo', base64ToFile(photo, 'photo.png'))
     }
+
     if (backgroundImage !== character.value.background_image) {
       formData.append('background_image', base64ToFile(backgroundImage, 'background_image.png'))
     }

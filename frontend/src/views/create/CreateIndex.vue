@@ -8,4 +8,5 @@ import CreateCharacter from "@/views/create/character/CreateCharacter.vue";
 </template>
 
 <style scoped>
+
 </style>

@@ -1,5 +1,4 @@
 <script setup>
-
 import Photo from "@/views/create/character/components/Photo.vue";
 import Name from "@/views/create/character/components/Name.vue";
 import Profile from "@/views/create/character/components/Profile.vue";

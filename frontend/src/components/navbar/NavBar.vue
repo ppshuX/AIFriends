@@ -1,3 +1,35 @@
+<script setup>
+// 组件逻辑（如果需要）
+import MenuIcon from "@/components/navbar/icons/MenuIcon.vue";
+import HomepageIcon from "@/components/navbar/icons/HomepageIcon.vue";
+import FriendIcon from "@/components/navbar/icons/FriendIcon.vue";
+import CreateIcon from "@/components/navbar/icons/CreateIcon.vue";
+import SearchIcon from "@/components/navbar/icons/SearchIcon.vue";
+import {useUserStore} from "@/stores/user.js";
+import UserMenu from "@/components/navbar/UserMenu.vue";
+import {useRoute, useRouter} from "vue-router";
+import {ref, watch} from "vue";
+
+const user = useUserStore();
+const searchQuery = ref('');
+const router = useRouter();
+const route = useRoute();
+
+watch(() => route.query.q, newQ => {
+  searchQuery.value = newQ || '';
+
+})
+
+function handleSearch() {
+  router.push({
+    name: 'homepage-index',
+    query: {
+      q: searchQuery.value.trim(),
+    }
+  });
+}
+</script>
+
 <template>
   <div class="drawer lg:drawer-open">
     <input id="my-drawer-4" type="checkbox" class="drawer-toggle" />
@@ -11,17 +43,17 @@
           <div class="px-2 font-bold text-xl">AIFriends</div>
         </div>
         <div class="navbar-center w-4/5 max-w-180 flex justify-center">
-          <div class="join w-4/5 flex justify-center">
-            <input class="input join-item rounded-l-full w-4/5" placeholder="搜索你感兴趣的内容">
+          <form @submit.prevent="handleSearch" class="join w-4/5 flex justify-center">
+            <input v-model="searchQuery" class="input join-item rounded-l-full w-4/5" placeholder="搜索你感兴趣的内容">
             <button class="btn join-item rounded-r-full gap-0">
-              <SearchIcon />
+              <SearchIcon/>
               搜索
             </button>
-          </div>
+          </form>
         </div>
 
         <div class="navbar-end">
-          <RouterLink v-if="user.isLogin()" :to="{ name: 'update-character', params:{character_id:1} }" active-class="Button-active" class="btn btn-ghost text-lg">
+          <RouterLink v-if="user.isLogin()" :to="{ name: 'create-index' }" active-class="Button-active" class="btn btn-ghost text-lg">
             <CreateIcon />
             创作
           </RouterLink>
@@ -63,19 +95,6 @@
     </div>
   </div>
 </template>
-
-<script setup>
-// 组件逻辑（如果需要）
-import MenuIcon from "@/components/navbar/icons/MenuIcon.vue";
-import HomepageIcon from "@/components/navbar/icons/HomepageIcon.vue";
-import FriendIcon from "@/components/navbar/icons/FriendIcon.vue";
-import CreateIcon from "@/components/navbar/icons/CreateIcon.vue";
-import SearchIcon from "@/components/navbar/icons/SearchIcon.vue";
-import {useUserStore} from "@/stores/user.js";
-import UserMenu from "@/components/navbar/UserMenu.vue";
-
-const user = useUserStore();
-</script>
 
 <style scoped>
 /* 组件样式（如果需要） */

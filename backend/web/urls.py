@@ -1,9 +1,11 @@
 from django.urls import path, re_path
 
 from .views.create.character.create import CreateCharacterView
+from .views.create.character.get_list import GetListCharacterView
 from .views.create.character.get_single import GetSingleCharacterView
 from .views.create.character.remove import RemoveCharacterView
 from .views.create.character.update import UpdateCharacterView
+from .views.homepage.index import HomepageIndexView
 from .views.index import index
 from .views.user.account.get_user_info import GetUserInfo
 from .views.user.account.logout import LogoutView
@@ -23,8 +25,10 @@ urlpatterns = [
     path('api/create/character/update/', UpdateCharacterView.as_view()),
     path('api/create/character/remove/', RemoveCharacterView.as_view()),
     path('api/create/character/get_single/', GetSingleCharacterView.as_view()),
-    path("", index, name="index"),
     path('api/user/profile/update/', UpdateProfile.as_view()),
+    path('api/create/character/get_list/', GetListCharacterView.as_view()),
+    path('api/homepage/index/', HomepageIndexView.as_view()),
+    path("", index, name="index"),
     # 前端 history 模式：除 media/static/assets 外的任意路径都交给前端路由
     re_path(r"^(?!media/|static/|assets/).*$", index),
 ]
