@@ -1,9 +1,9 @@
 <script setup>
-import {ref, useTemplateRef} from "vue";
+import {ref, useTemplateRef, computed} from "vue";
 import {useUserStore} from "@/stores/user.js";
 import UpdateIcon from "@/components/character/icon/UpdateIcon.vue";
 import RemoveIcon from "@/components/character/icon/RemoveIcon.vue";
-import api from "@/js/http/api.js";
+import api, { resolveMediaUrl } from "@/js/http/api.js";
 import {useRouter} from "vue-router";
 import ChatField from "@/components/character/chat_field/ChatField.vue";
 
@@ -41,6 +41,10 @@ async function handleRemoveFriend() {
 const chatFieldRef = useTemplateRef('chat-field-ref')
 const friend = ref(null)
 
+const backgroundImageUrl = computed(() => resolveMediaUrl(props.character?.background_image))
+const characterPhotoUrl = computed(() => resolveMediaUrl(props.character?.photo))
+const authorPhotoUrl = computed(() => resolveMediaUrl(props.character?.author?.photo))
+
 async function openChatField() {
   if (!user.isLogin()) {
     await router.push({
@@ -67,7 +71,7 @@ async function openChatField() {
   <div>
     <div class="avatar cursor-pointer" @mouseover="isHover=true" @mouseout="isHover=false" @click="openChatField">
       <div class="w-60 h-100 rounded-2xl relative">
-        <img :src="character.background_image" class="transition-transform duration-300" :class="{'scale-120': isHover}" alt="">
+        <img :src="backgroundImageUrl" class="transition-transform duration-300" :class="{'scale-120': isHover}" alt="">
         <div class="absolute left-0 top-50 w-60 h-50 bg-linear-to-t from-black/40 to-transparent"></div>
 
         <div v-if="canEdit && character.author.user_id === user.id" class="absolute right-0 top-50">
@@ -87,7 +91,7 @@ async function openChatField() {
 
         <div class="absolute left-4 top-54 avatar">
           <div class="w-16 rounded-full ring-3 ring-white">
-            <img :src="character.photo" alt="">
+            <img :src="characterPhotoUrl" alt="">
           </div>
         </div>
         <div class="absolute left-24 right-4 top-58 text-white font-bold line-clamp-1 break-all">
@@ -102,7 +106,7 @@ async function openChatField() {
     <RouterLink :to="{name: 'user-space-index', params: {user_id: character.author.user_id}}" class="flex items-center mt-4 gap-2 w-60">
       <div class="avatar">
         <div class="w-7 rounded-full">
-          <img :src="character.author.photo" alt="">
+          <img :src="authorPhotoUrl" alt="">
         </div>
       </div>
       <div class="text-sm line-clamp-1 break-all">{{ character.author.username }}</div>

@@ -1,5 +1,6 @@
 __pycache__/
 *.py[cod]
+*.env
 .idea/
 db.sqlite3
 # 忽略 media，但保留默认头像供部署

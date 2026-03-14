@@ -14,6 +14,12 @@ import { useUserStore } from "@/stores/user.js";
 // 开发环境请求本地 Django；生产环境用相对路径，请求当前域名（同源）
 export const BASE_URL = import.meta.env.DEV ? 'http://127.0.0.1:8000' : ''
 
+export function resolveMediaUrl(url) {
+    if (!url) return ''
+    if (/^https?:\/\//.test(url)) return url
+    return `${BASE_URL}${url}`
+}
+
 const api = axios.create({
     baseURL: BASE_URL,
     withCredentials: true,
