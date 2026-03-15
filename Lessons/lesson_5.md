@@ -213,16 +213,110 @@ function checkSentinelVisible() {
 
 ---
 
+## 5. 添加系统提示词和短期记忆（多轮对话）
+
+### 5.1 创建 SystemPrompt 模型
+
+在 `AIFriends/backend/web/models/friend.py` 中创建 **SystemPrompt** 模型，用于存储所有 agent 的系统提示词（存库后修改更方便，无需改代码重启）。
+
+字段示例：`title`、`order_number`（或 `old_number`，用于排序）、`prompt`、`create_time`、`update_time`。
+
+参考提示词可参考课程提供的链接，将内容按条写入数据库（如 title='回复'、'记忆' 等）。
+
+### 5.2 系统提示词与最近 10 条对话
+
+在 **chat.py** 中：
+
+- 实现 `add_system_prompt(state, friend)`：从 `SystemPrompt.objects.filter(title='回复').order_by('order_number')`（若模型字段为 `old_number` 则用 `order_by('old_number')`）拼出 prompt，加上 `【角色性格】\n{friend.character.profile}`，返回 `{'messages': [SystemMessage(prompt)] + state['messages']}`。
+- 实现 `add_recent_message(state, friend)`（或 `add_recent_messages`）：从 `Message.objects.filter(friend=friend).order_by('-id')[:10]` 取最近 10 条，转为 list 后 reverse，按条拼成 `HumanMessage` / `AIMessage`，再与当前 `state['messages']` 组合（如 `msgs[:1] + history + msgs[1:]` 或 `msgs[:1] + history + msgs[-1:]`），注意用 **list(...)** 再 **.reverse()**，不能对切片后的 QuerySet 直接 `.reverse()`）。
+- 在 `post` 中先 `add_system_prompt(inputs, friend)`，再 `add_recent_message(inputs, friend)`，再传入 `event_stream` / `app.stream`。
+
+---
+
+## 6. 添加 Function Call
+
+在 **chat/graph.py** 中：
+
+- 从 `langchain_core.tools` 导入 **`tool`**（不要从 `json` 等错误位置导入）。
+- 定义带文档字符串的工具，例如：
+
+```python
+@tool
+def get_time() -> str:
+    """当需要查询精确时间时，调用此函数。返回格式为：[年-月-日 时:分:秒]"""
+    return localtime(now()).strftime('%Y-%m-%d %H:%M:%S')
+
+tools = [get_time]
+```
+
+- `ChatOpenAI(...).bind_tools(tools)`。
+- 定义 **ToolNode(tools)** 与 **should_continue(state)**：取 `state['messages'][-1]`，若 `last_message.tool_calls` 则返回 `"tools"`，否则 `"end"`。
+- 使用 **add_conditional_edges** 在 `'agent'` 与 `'tools'` 之间分支，并 `graph.add_edge('tools', 'agent')` 形成循环。
+
+---
+
+## 7. 添加长期记忆
+
+- 在 **系统提示词**（add_system_prompt）中追加：`【长期记忆】\n{friend.memory}\n`（Friend 模型需有 `memory` 字段）。
+- 新建 **memory 模块**：
+  - **memory/update.py**：定义 **MemoryGraph**（与 chat 图类似，状态用 `messages`，单节点 LLM，`model_call` 中 `llm.invoke(state['messages'])`，返回 `{'messages': [res]}`）。
+  - **memory/graph.py**（或按你项目命名）：实现 **update_memory(friend)**；内部 `create_system_message()` 从 `SystemPrompt.objects.filter(title='记忆').order_by('old_number')` 拼 prompt，`create_human_message(friend)` 用 `friend.memory` 与最近 10 条 Message 拼成 HumanMessage；`app = MemoryGraph.create_app()`，`res = app.invoke({'messages': [create_system_message(), create_human_message(friend)]})`，然后 `friend.memory = res['messages'][-1].content[:5000]`，`friend.update_time = now()`，`friend.save()`。
+- 在 **chat.py** 的 `event_stream()` 里，在 **Message.objects.create(...)** 之后调用 **update_memory(friend)**（可按 demo 用 `Message.objects.filter(friend=friend).count() % 1 == 0` 控制频率，实现“每轮都更新”）。
+
+---
+
+## 8. 知识库
+
+### 8.1 向量数据库 LanceDB
+
+安装：`pip install lancedb langchain-community`（按需加 `tantivy`）。可参考 [LanceDB 文档](https://docs.lancedb.com/quickstart)。
+
+### 8.2 Embedding 模型
+
+在 `AIFriends/backend/web/documents/utils/custom_embeddings.py` 中实现 **CustomEmbeddings**：
+
+- 从 **`langchain_core.embeddings`** 导入 **Embeddings**（不要从 `langchain_core` 直接 import Embeddings）。
+- 使用 `OpenAI(api_key=os.getenv("API_KEY"), base_url=os.getenv("API_BASE"))`，在 `embed_documents` 中按 batch 调用 `client.embeddings.create(model="text-embedding-v4", input=batch, dimensions=1024)`，在 `embed_query` 中复用 `embed_documents([text])[0]`。
+
+### 8.3 插入文档
+
+- 在 `.gitignore` 中加入 `backend/web/documents/`（避免把文档数据提交）。若已索引可 `git rm --cached -f backend/web/documents/ -r`。
+- 在 `documents/utils/insert_documents.py` 中：使用 **TextLoader** 加载 `./web/documents/data.txt`（**encoding='utf-8'**，注意拼写），**RecursiveCharacterTextSplitter** 切分，**LanceDB.from_documents(..., embedding=..., connection=db, table_name='my_knowledge_base', mode='overwrite')**；需 **from langchain_community.vectorstores import LanceDB**。
+- 在 REPL 或脚本中直接运行 `insert_documents()` 时，需在函数开头 **load_dotenv()**，并保证当前工作目录为 **backend**，否则 `API_KEY` 为空会报错。
+
+### 8.4 查询知识库的 Tool
+
+在 **chat/graph.py** 中增加工具：
+
+- 导入 **lancedb**、**LanceDB**（langchain_community.vectorstores）、**CustomEmbeddings**。
+- `@tool` 定义 **search_knowledge_base(query: str)**，内部 `lancedb.connect(...)`、`CustomEmbeddings()`、`LanceDB(connection=db, embedding=embeddings, table_name='my_knowledge_base')`，`similarity_search(query, k=3)`，将结果拼成字符串返回；**join 时使用列表推导**：`'\n\n'.join([f'内容片段：{i+1}\n{doc.page_content}' for i, doc in enumerate(docs)])`。
+- 将 `search_knowledge_base` 加入 **tools** 列表，与 get_time 一起传给 **bind_tools** 和 **ToolNode**。
+
+---
+
+## 9. 打包代码
+
+- 删除调试信息（如 `print`、`pprint` 等）。
+- 前端 **Message** 组件聊天气泡加上 **break-all**，避免英文过长撑出聊天区域。
+- 将前端构建产物打包到后端（如 `npm run build` 后输出到 `backend/static/frontend/` 并更新 `backend/web/templates/index.html`）。
+
+---
+
 ## 小结
 
 | 模块           | 后端 | 前端 |
 |----------------|------|------|
 | 聊天发送与流式 | Message 模型；chat/graph（StateGraph、streaming、include_usage）；chat.py（event_stream、SSERenderer、Message.objects.create）；urls | streamApi.js（fetchEventSource、401 刷新重试）；InputField 用 streamApi、pushBackMessage（user + 空 ai）、addToLastMessage、isProcessing |
 | 聊天记录       | get_history（last_message_id、friend_id、分页 10 条）；urls | ChatField（history、ref chat-history-ref、handlePushBackMessage/AddToLastMessage/PushFrontMessage、resolveMediaUrl 背景）；ChatHistory（loadMore、lastMessageId、observer.observe、scroll 位置保持、onBeforeUnmount）；Message（:src、resolveMediaUrl、whitespace-pre-wrap） |
+| 系统提示与多轮 | SystemPrompt 模型；add_system_prompt、add_recent_message（最近 10 条，list+reverse）；chat 中组合 inputs | — |
+| Function Call  | @tool（langchain_core.tools）；get_time；bind_tools、ToolNode、should_continue、conditional_edges | — |
+| 长期记忆       | friend.memory；memory/update（MemoryGraph）、memory/graph（update_memory、create_system_message、create_human_message）；chat 中【长期记忆】+ 每轮后 update_memory | — |
+| 知识库         | lancedb、LanceDB；CustomEmbeddings（Embeddings 从 langchain_core.embeddings 导入）；insert_documents（load_dotenv、encoding、LanceDB.from_documents）；search_knowledge_base tool | — |
+| 打包           | — | break-all；npm run build → 后端静态与 index.html |
 
 **路由汇总（本节涉及）**：
 
 - `api/friend/message/chat/`
 - `api/friend/message/get_history/`
 
-**易错点**：`handlePushFrontMessage` 用 **unshift** 不是 shift；传给 ChatHistory 的是 **friend.character** 不是 friend.history；InputField 第二条 pushBackMessage 的 AI 条 **content 为 ''**；ChatHistory 必须 **observer.observe(sentinelRef.value)** 且变量名 **lastMessageId** 与请求参数一致；Message 头像用 **:src** 和 **resolveMediaUrl**；流式请求失败时在 **catch** 里也要 **isProcessing = false**。
+**易错点**：`handlePushFrontMessage` 用 **unshift** 不是 shift；传给 ChatHistory 的是 **friend.character** 不是 friend.history；InputField 第二条 pushBackMessage 的 AI 条 **content 为 ''**；ChatHistory 必须 **observer.observe(sentinelRef.value)** 且变量名 **lastMessageId** 与请求参数一致；Message 头像用 **:src** 和 **resolveMediaUrl**；流式请求失败时在 **catch** 里也要 **isProcessing = false**；add_recent_message 中 QuerySet 切片后先 **list(...)** 再 **.reverse()**；**@tool** 从 **langchain_core.tools** 导入；Embeddings 从 **langchain_core.embeddings** 导入；insert_documents 在函数内 **load_dotenv()** 且需在 **backend** 目录下运行；search_knowledge_base 中 **join** 使用 **列表** `'\n\n'.join([...])`。

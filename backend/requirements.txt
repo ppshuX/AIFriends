@@ -12,6 +12,7 @@ Pillow
 
 # 大模型与对话图（Lesson 5 文字聊天）
 langchain
+langchain-community
 langchain-core
 langchain-openai
 langgraph
