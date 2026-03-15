@@ -67,17 +67,16 @@ async function loadMore() {
             scrollRef.value.scrollTop = oldTop + newHeight - oldHeight
 
             if (checkSentinelVisible()) {
-                await loadMore()
+                await loadMore();
             }
         }
     }
 }
 
 let observer = null
-onMounted(async () => {
-    await loadMore()
+onMounted(async() => {
+    await loadMore();
 
-    await nextTick()
     observer = new IntersectionObserver(
         entries => {
             entries.forEach(entry => {
@@ -86,9 +85,10 @@ onMounted(async () => {
                 }
             })
         },
-        { root: scrollRef.value, rootMargin: '2px', threshold: 0 }
+        { root: null, rootMargin: '2px', threshold: 0 }
     )
-    if (sentinelRef.value) observer.observe(sentinelRef.value)
+
+    observer.observe(sentinelRef.value)
 })
 
 onBeforeUnmount(() => {

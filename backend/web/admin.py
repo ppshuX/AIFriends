@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models.character import Character
-from .models.friend import Friend, Message
+from .models.friend import Friend, Message, SystemPrompt
 from .models.user import UserProfile
 
 # Register your models here.
@@ -21,3 +21,5 @@ class FriendAdmin(admin.ModelAdmin):
 @admin.register(Message)
 class MessageAdmin(admin.ModelAdmin):
     raw_id_fields = ('friend', )
+
+admin.site.register(SystemPrompt)

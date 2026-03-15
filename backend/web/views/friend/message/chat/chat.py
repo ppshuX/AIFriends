@@ -1,14 +1,15 @@
 import json
 
 from django.http import StreamingHttpResponse
-from langchain_core.messages import BaseMessageChunk, HumanMessage
+from langchain_core.messages import AIMessage, BaseMessageChunk, HumanMessage, SystemMessage
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.renderers import BaseRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from web.models.friend import Friend, Message
+from web.models.friend import Friend, Message, SystemPrompt
 from web.views.friend.message.chat.graph import ChatGraph
+from web.views.friend.message.memory.graph import update_memory
 
 
 class SSERenderer(BaseRenderer):
@@ -17,6 +18,26 @@ class SSERenderer(BaseRenderer):
 
     def render(self, data, accepted_media_type=None, renderer_context=None):
         return data
+
+def add_System_prompt(state, friend):
+    msgs = state['messages']
+    system_prompts = SystemPrompt.objects.filter(title='回复').order_by('old_number')
+    prompt = ''
+    for sp in system_prompts:
+        prompt += sp.prompt
+    prompt += f'\n【角色性格】\n{friend.character.profile}\n'
+    prompt += f'\n【长期记忆】\n{friend.memory}\n'
+    return {'messages': [SystemMessage(prompt)] + msgs}
+
+def add_recent_message(state, friend):
+    msgs = state['messages']
+    message_raw = list(Message.objects.filter(friend=friend).order_by("-id")[:10])
+    message_raw.reverse()
+    history = []
+    for m in message_raw:
+        history.append(HumanMessage(m.user_message))
+        history.append(AIMessage(m.output))
+    return {'messages': msgs[:1] + history + msgs[1:]}
 
 
 class MessageChatView(APIView):
@@ -40,6 +61,8 @@ class MessageChatView(APIView):
         app = ChatGraph.create_app()
         inputs = {"messages": [HumanMessage(message)]}
 
+        inputs = add_System_prompt(inputs, friend)
+        inputs = add_recent_message(inputs, friend)
 
         def event_stream():
             full_output = ""
@@ -65,6 +88,8 @@ class MessageChatView(APIView):
                 output_tokens=full_usage.get("output_tokens", 0),
                 total_tokens=full_usage.get("total_tokens", 0),
             )
+            if Message.objects.filter(friend=friend).count() % 1 == 0:
+                update_memory(friend)
 
         response = StreamingHttpResponse(event_stream(), content_type="text/event-stream")
         response["Cache-Control"] = "no-cache"

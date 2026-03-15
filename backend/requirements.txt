@@ -1,0 +1,17 @@
+# Django
+Django==6.0.1
+djangorestframework
+djangorestframework-simplejwt
+django-cors-headers
+
+# 环境变量
+python-dotenv
+
+# 图片处理（Character 头像、背景等）
+Pillow
+
+# 大模型与对话图（Lesson 5 文字聊天）
+langchain
+langchain-core
+langchain-openai
+langgraph
