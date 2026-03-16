@@ -1,5 +1,6 @@
 from django.urls import path, re_path
 
+from .views.friend.message.asr.asr import ASRView
 from web.views.friend.message.chat.chat import MessageChatView
 
 from .views.create.character.create import CreateCharacterView
@@ -39,6 +40,7 @@ urlpatterns = [
     path('api/friend/get_list/', GetListFriendView.as_view()),
     path('api/friend/message/chat/', MessageChatView.as_view()),
     path('api/friend/message/get_history/', GetHistoryView.as_view()),
+    path('api/friend/message/asr/asr/', ASRView.as_view()),
 
     path("", index, name="index"),
     # 前端 history 模式：除 media/static/assets 外的任意路径都交给前端路由

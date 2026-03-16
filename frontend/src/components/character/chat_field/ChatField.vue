@@ -18,8 +18,9 @@ async function showModal() {
   inputRef.value?.focus?.()
 }
 
-function closeModal() {
+function handleClose() {
   modalRef.value?.close()
+  inputRef.value?.close?.()
 }
 
 const modalStyle = computed(() => {
@@ -39,9 +40,9 @@ function handlePushBackMessage(msg) {
   chatHistoryRef.value?.scrollToBottom();
 }
 
-function handAddToLastMessage(delta) {
-  history.value.at(-1).content += delta;
-  chatHistoryRef.value?.scrollToBottom();
+function handleAddToLastMessage(delta) {
+  history.value.at(-1).content += delta
+  chatHistoryRef.value?.scrollToBottom()
 }
 
 function handlePushFrontMessage(msg) {
@@ -56,7 +57,7 @@ defineExpose({
 <template>
   <dialog ref="modal-ref" class="modal">
     <div class="modal-box w-90 h-150" :style="modalStyle">
-      <button @click="closeModal" class="btn btn-circle btn-sm btn-ghost bg-transparent absolute right-1 top-1">✕</button>
+      <button @click="handleClose" class="btn btn-circle btn-sm btn-ghost bg-transparent absolute right-1 top-1">✕</button>
       <ChatHistory
         ref="chat-history-ref"
         v-if="friend"
@@ -70,7 +71,7 @@ defineExpose({
         ref="input-ref" 
         :friend-id="friend.id"
         @pushBackMessage="handlePushBackMessage"
-        @addToLastMessage="handAddToLastMessage"
+        @addToLastMessage="handleAddToLastMessage"
       />
       <CharacterPhotoField v-if="friend" :character="friend.character" />
     </div>

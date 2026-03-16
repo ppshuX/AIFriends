@@ -2,25 +2,142 @@
 
 import SendIcon from "@/components/character/icon/SendIcon.vue";
 import MicIcon from "@/components/character/icon/MicIcon.vue";
-import { ref, useTemplateRef } from "vue";
+import { onUnmounted, ref, useTemplateRef } from "vue";
 import streamApi from "@/js/http/streamApi";
+import Microphone from "./Microphone.vue";
 
 const props = defineProps(['friendId'])
 const emit = defineEmits(['pushBackMessage', 'addToLastMessage'])
 const inputRef = useTemplateRef('input-ref')
 const message = ref('')
-let isProcessing = false
+let processId = 0
+const showMic = ref(false)
+
+let mediaSource = null;
+let sourceBuffer = null;
+let audioPlayer = new Audio(); // 全局播放器实例
+let audioQueue = [];           // 待写入 Buffer 的二进制队列
+let isUpdating = false;        // Buffer 是否正在写入
+
+
+const initAudioStream = () => {
+    audioPlayer.pause();
+    audioQueue = [];
+    isUpdating = false;
+
+    mediaSource = new MediaSource();
+    audioPlayer.src = URL.createObjectURL(mediaSource);
+
+    mediaSource.addEventListener('sourceopen', () => {
+        try {
+            sourceBuffer = mediaSource.addSourceBuffer('audio/mpeg');
+            sourceBuffer.addEventListener('updateend', () => {
+                isUpdating = false;
+                processQueue();
+            });
+        } catch (e) {
+            console.error("MSE AddSourceBuffer Error:", e);
+        }
+    });
+
+    audioPlayer.play().catch(e => console.error("等待用户交互以播放音频"));
+};
+
+const processQueue = () => {
+    if (isUpdating || audioQueue.length === 0 || !sourceBuffer || sourceBuffer.updating) {
+        return;
+    }
+
+    isUpdating = true;
+    const chunk = audioQueue.shift();
+    try {
+        sourceBuffer.appendBuffer(chunk);
+    } catch (e) {
+        console.error("SourceBuffer Append Error:", e);
+        isUpdating = false;
+    }
+};
+
+const stopAudio = () => {
+    audioPlayer.pause();
+    audioQueue = [];
+    isUpdating = false;
+
+    if (mediaSource) {
+        if (mediaSource.readyState === 'open') {
+            try {
+                mediaSource.endOfStream();
+            } catch (e) {
+            }
+        }
+        mediaSource = null;
+    }
+
+    if (audioPlayer.src) {
+        URL.revokeObjectURL(audioPlayer.src);
+        audioPlayer.src = '';
+    }
+};
+
+const handleAudioChunk = (base64Data) => {  // 将语音片段添加到播放器队列中
+    try {
+        const binaryString = atob(base64Data);
+        const len = binaryString.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+        }
+
+        audioQueue.push(bytes);
+        processQueue();
+    } catch (e) {
+        console.error("Base64 Decode Error:", e);
+    }
+};
+
+onUnmounted(() => {
+    audioPlayer.pause();
+    audioPlayer.src = '';
+});
+
 
 function focus() {
-  inputRef.value.focus();
+  inputRef.value?.focus?.()
 }
 
-async function handleSend() {
-  if (isProcessing) return
-  isProcessing = true
+function openMic() {
+  showMic.value = true
+}
 
-  const content = message.value.trim();
+function closeMic() {
+  showMic.value = false
+}
+
+function close() {
+  ++ processId
+  showMic.value = false
+  stopAudio()
+}
+
+function handleStop() {
+  ++ processId
+  stopAudio()
+}
+
+async function handleSend(event, audio_msg) {
+  let content
+
+  if (audio_msg) {
+    content = audio_msg.trim()
+  } else {
+    content = message.value.trim();
+  }
+
   if (!content) return
+
+initAudioStream()
+
+  const curId = ++ processId;
   message.value = ''
 
   emit('pushBackMessage', {role: 'user', content: content, id: crypto.randomUUID()})
@@ -33,28 +150,33 @@ async function handleSend() {
         message: content,
       },
       onmessage(data, isDone) {
-        if (isDone) {
-          isProcessing = false;
-        } else if (data.content) {
+        if (curId !== processId) return
+
+        if (data.content) {
           emit('addToLastMessage', data.content)
         }
+
+        if (data.audio) {
+          handleAudioChunk(data.audio)
+        }
       },
-      onerror() {
-        isProcessing = false;
+      onerror(err) {
+
       },
     })
   } catch (err) {
-    isProcessing = false
+
   }
 }
 
 defineExpose({
   focus,
+  close,
 })
 </script>
 
 <template>
-  <form @submit.prevent="handleSend" class="absolute bottom-4 left-2 h-12 w-86 flex items-center">
+  <form v-if="!showMic" @submit.prevent="handleSend" class="absolute bottom-4 left-2 h-12 w-86 flex items-center">
     <input
       ref="input-ref"
       v-model="message"
@@ -65,10 +187,15 @@ defineExpose({
     <div @click="handleSend" class="absolute right-2 w-8 h-8 flex justify-center items-center cursor-pointer">
       <SendIcon />
     </div>
-    <div class="absolute right-10 w-8 h-8 flex justify-center items-center cursor-pointer">
+    <div @click="openMic" class="absolute right-10 w-8 h-8 flex justify-center items-center cursor-pointer">
       <MicIcon />
     </div>
   </form>
+  <Microphone
+    v-else 
+    @close="closeMic"
+    @send="handleSend" 
+    @stop="handleStop"/>
 </template>
 
 <style scoped>

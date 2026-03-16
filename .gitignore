@@ -16,6 +16,8 @@ static/
 backend/web/documents/data.txt
 backend/web/documents/lancedb_storage/
 
+frontend/public/vad/
+
 # 部署配置文件（包含敏感信息）
 deploy-config.ps1
 deploy-config.sh
