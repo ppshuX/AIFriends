@@ -1,6 +1,7 @@
-# AIFriends - 虚拟女友/男友/朋友创作分享平台
+<img width="2559" height="1452" alt="image" src="https://github.com/user-attachments/assets/f9bee238-91f0-4451-8f74-cc395a0c65f5" />> 一个大模型应用入门项目，支持用户创建并分享虚拟角色，实现语音交互和智能对话
 
-> 一个大模型应用入门项目，支持用户创建并分享虚拟角色，实现语音交互和智能对话
+## 项目地址：https://app7804.acapp.acwing.com.cn/
+<img width="2559" height="1452" alt="image" src="https://github.com/user-attachments/assets/5aea2de6-edbe-4649-adff-0104b3580a96" />
 
 ## 📖 项目简介
 
