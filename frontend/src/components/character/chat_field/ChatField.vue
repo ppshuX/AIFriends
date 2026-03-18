@@ -2,7 +2,7 @@
 import {computed, nextTick, ref, useTemplateRef} from "vue";
 import InputField from "@/components/character/chat_field/input_field/InputField.vue";
 import CharacterPhotoField from "@/components/character/chat_field/character_photo_field/CharacterPhotoField.vue";
-import ChatHistory from "./input_field/chathistory/ChatHistory.vue";
+import ChatHistory from "@/components/character/chat_field/chat_history/ChatHistory.vue";
 import { resolveMediaUrl } from "@/js/http/api.js";
 
 const props = defineProps(['friend'])
@@ -12,15 +12,14 @@ const chatHistoryRef = useTemplateRef('chat-history-ref')
 const history = ref([])
 
 async function showModal() {
-  modalRef.value?.showModal()
+  modalRef.value.showModal()
 
   await nextTick()
-  inputRef.value?.focus?.()
+  inputRef.value.focus()
 }
 
 function handleClose() {
-  modalRef.value?.close()
-  inputRef.value?.close?.()
+  inputRef.value.close()
 }
 
 const modalStyle = computed(() => {
@@ -36,13 +35,13 @@ const modalStyle = computed(() => {
 })
 
 function handlePushBackMessage(msg) {
-  history.value.push(msg);
-  chatHistoryRef.value?.scrollToBottom();
+  history.value.push(msg)
+  chatHistoryRef.value.scrollToBottom()
 }
 
 function handleAddToLastMessage(delta) {
   history.value.at(-1).content += delta
-  chatHistoryRef.value?.scrollToBottom()
+  chatHistoryRef.value.scrollToBottom()
 }
 
 function handlePushFrontMessage(msg) {
@@ -55,9 +54,9 @@ defineExpose({
 </script>
 
 <template>
-  <dialog ref="modal-ref" class="modal">
+  <dialog ref="modal-ref" class="modal" @close="handleClose">
     <div class="modal-box w-90 h-150" :style="modalStyle">
-      <button @click="handleClose" class="btn btn-circle btn-sm btn-ghost bg-transparent absolute right-1 top-1">✕</button>
+      <button @click="modalRef.close()" class="btn btn-sm btn-circle btn-ghost bg-transparent absolute right-1 top-1">✕</button>
       <ChatHistory
         ref="chat-history-ref"
         v-if="friend"
@@ -66,10 +65,10 @@ defineExpose({
         :character="friend.character"
         @pushFrontMessage="handlePushFrontMessage"
       />
-      <InputField 
+      <InputField
         v-if="friend"
-        ref="input-ref" 
-        :friend-id="friend.id"
+        ref="input-ref"
+        :friendId="friend.id"
         @pushBackMessage="handlePushBackMessage"
         @addToLastMessage="handleAddToLastMessage"
       />

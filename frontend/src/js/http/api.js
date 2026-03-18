@@ -9,10 +9,10 @@
 */
 
 import axios from "axios"
-import { useUserStore } from "@/stores/user.js";
+import {useUserStore} from "@/stores/user.js";
+import CONFIG_API from "@/js/config/config.js";
 
-// 开发环境请求本地 Django；生产环境用相对路径，请求当前域名（同源）
-export const BASE_URL = import.meta.env.DEV ? 'http://127.0.0.1:8000' : ''
+export const BASE_URL = CONFIG_API.HTTP_URL
 
 export function resolveMediaUrl(url) {
     if (!url) return ''

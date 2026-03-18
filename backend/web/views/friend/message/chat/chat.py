@@ -16,7 +16,7 @@ from rest_framework.permissions import IsAuthenticated
 
 from web.models.friend import Friend, Message, SystemPrompt
 from web.views.friend.message.chat.graph import ChatGraph
-from web.views.friend.message.memory.graph import update_memory
+from web.views.friend.message.memory.update import update_memory
 
 
 class SSERenderer(BaseRenderer):
@@ -28,8 +28,7 @@ class SSERenderer(BaseRenderer):
 
 def add_system_prompt(state, friend):
     msgs = state['messages']
-    # 本项目的 SystemPrompt 使用 old_number 字段排序，对应 demo 中的 order_number
-    system_prompts = SystemPrompt.objects.filter(title='回复').order_by('old_number')
+    system_prompts = SystemPrompt.objects.filter(title='回复').order_by('order_number')
     prompt = ''
     for sp in system_prompts:
         prompt += sp.prompt
@@ -125,7 +124,7 @@ class MessageChatView(APIView):
                     break
 
 
-    async def run_tts_tasks(self, app, inputs, mq):
+    async def run_tts_tasks(self, app, inputs, mq, voice_id):
         task_id = uuid.uuid4().hex
         api_key = os.getenv('API_KEY')
         wss_url = os.getenv('WSS_URL')
@@ -146,7 +145,7 @@ class MessageChatView(APIView):
                     "model": "cosyvoice-v3-flash",
                     "parameters": {
                         "text_type": "PlainText",
-                        "voice": "longanyang",  # 音色
+                        "voice": voice_id,  # 音色
                         "format": "mp3",  # 音频格式
                         "sample_rate": 22050,  # 采样率
                         "volume": 50,  # 音量
@@ -166,16 +165,19 @@ class MessageChatView(APIView):
             )
 
 
-    def work(self, app, inputs, mq):
+    def work(self, app, inputs, mq, voice_id):
         try:
-            asyncio.run(self.run_tts_tasks(app, inputs, mq))
+            asyncio.run(self.run_tts_tasks(app, inputs, mq, voice_id))
         finally:
             mq.put_nowait(None)
 
 
     def event_stream(self, app, inputs, friend, message):
         mq = Queue()
-        thread = threading.Thread(target=self.work, args=(app, inputs, mq))
+        voice_id = 'longanyang'
+        if friend.character.voice and friend.character.voice.voice_id:
+            voice_id = friend.character.voice.voice_id
+        thread = threading.Thread(target=self.work, args=(app, inputs, mq, voice_id))
         thread.start()
 
         full_output = ''

@@ -8,6 +8,7 @@ from .views.create.character.get_list import GetListCharacterView
 from .views.create.character.get_single import GetSingleCharacterView
 from .views.create.character.remove import RemoveCharacterView
 from .views.create.character.update import UpdateCharacterView
+from .views.create.character.voice.get_list import GetVoiceList
 from .views.friend.get_list import GetListFriendView
 from .views.friend.get_or_create import GetOrCreateFriendView
 from .views.friend.message.get_history import GetHistoryView
@@ -34,6 +35,7 @@ urlpatterns = [
     path('api/create/character/get_single/', GetSingleCharacterView.as_view()),
     path('api/user/profile/update/', UpdateProfile.as_view()),
     path('api/create/character/get_list/', GetListCharacterView.as_view()),
+    path('api/create/character/voice/get_list/', GetVoiceList.as_view()),
     path('api/homepage/index/', HomepageIndexView.as_view()),
     path('api/friend/get_or_create/', GetOrCreateFriendView.as_view()),
     path('api/friend/remove/', RemoveFriendView.as_view()),

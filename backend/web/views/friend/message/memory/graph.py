@@ -1,39 +1,32 @@
-from django.utils.timezone import now
-from langchain_core.messages import SystemMessage, HumanMessage
+import os
+from typing import TypedDict, Annotated, Sequence
 
-from web.models.friend import Message, SystemPrompt
-from web.views.friend.message.memory.update import MemoryGraph
-
-
-def create_system_message():
-    system_prompts = SystemPrompt.objects.filter(title='记忆').order_by('old_number')
-    prompt = ''
-    for sp in system_prompts:
-        prompt += sp.prompt
-    return SystemMessage(prompt)                                                                
+from langchain_core.messages import BaseMessage
+from langchain_openai import ChatOpenAI
+from langgraph.constants import START, END
+from langgraph.graph import add_messages, StateGraph
 
 
-def create_human_message(friend):
-    prompt = f'【原始记忆】\n{friend.memory}\n'
-    prompt += f'【最近对话】\n'
-    messages = list(Message.objects.filter(friend=friend).order_by('-id')[:10])
-    messages.reverse()
-    for m in messages:
-        prompt += f'user: {m.user_message}\n'
-        prompt += f'ai: {m.output}\n'
-    return HumanMessage(prompt)
+class MemoryGraph:
+    @staticmethod
+    def create_app():
+        llm = ChatOpenAI(
+            model='deepseek-v3.2',
+            openai_api_key=os.getenv('API_KEY'),
+            openai_api_base=os.getenv('API_BASE'),
+        )
 
+        class AgentState(TypedDict):
+            messages: Annotated[Sequence[BaseMessage], add_messages]
 
+        def model_call(state: AgentState) -> AgentState:
+            res = llm.invoke(state['messages'])
+            return {'messages': [res]}
 
-def update_memory(friend):
-    app = MemoryGraph.create_app()
-    inputs = {
-        'messages': [
-            create_system_message(),
-            create_human_message(friend),
-        ]
-    }
-    res = app.invoke(inputs)
-    friend.memory = res['messages'][-1].content[:5000]
-    friend.update_time = now()
-    friend.save()
+        graph = StateGraph(AgentState)
+        graph.add_node('agent', model_call)
+
+        graph.add_edge(START, 'agent')
+        graph.add_edge('agent', END)
+
+        return graph.compile()

@@ -1,16 +1,17 @@
 <script setup>
-import { MicVAD } from '@ricky0123/vad-web';
-import KeyboardIcon from '../../icon/KeyboardIcon.vue';
-import { onBeforeUnmount, onMounted, ref } from 'vue';
-import api from '@/js/http/api';
+import KeyboardIcon from "@/components/character/icons/KeyboardIcon.vue";
+import {onBeforeUnmount, onMounted, ref} from "vue";
+import {MicVAD} from "@ricky0123/vad-web";
+import api from "@/js/http/api.js";
+import CONFIG_API from "@/js/config/config.js";
 
 const emit = defineEmits(['close', 'send', 'stop'])
-const isSpeaking = ref()
+const isSpeaking = ref(false)
 
 let vadInstance = null;
 
 const startRecording = async () => {
-  const baseUrl = "http://localhost:5173/vad/";
+  const baseUrl = CONFIG_API.VAD_URL
   try {
     vadInstance = await MicVAD.new({
       baseAssetPath: baseUrl,
@@ -49,20 +50,19 @@ const float32ToInt16 = (float32Array) => {
 };
 
 const sendToBackend = async (arrayBuffer) => {
-  const blob = new Blob([arrayBuffer], {type: "audio/pcm"});
-  const formData = new FormData();
+  const blob = new Blob([arrayBuffer], { type: "audio/pcm" })
+  const formData = new FormData()
   formData.append("audio", blob, 'voice.pcm')
 
   try {
     const res = await api.post('/api/friend/message/asr/asr/', formData)
     const data = res.data
     if (data.result === 'success') {
-        emit('send', null, data.text)
+      emit('send', null, data.text)
     }
   } catch (err) {
-    console.log(err)
+    console.error(err)
   }
-
 };
 
 onMounted(() => {

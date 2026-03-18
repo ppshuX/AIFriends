@@ -8,6 +8,10 @@
   - 在 `InputField.vue` 中，`handleSend` 会先 `trim()` 内容并在为空时直接 `return`，不会推进 `processId` 或推空消息到 history。
   - 只有当内容非空时才会自增 `processId`、推入 user/ai 消息和发起流式请求，因此聊天框一开始为空时按回车 / 点发送不会破坏后续的发送逻辑。
 
+- **聊天框用 ESC 关闭时也要调用 handleClose 逻辑**：
+  - 用 ESC 关闭 `<dialog>` 时，浏览器只会关闭弹窗，不会执行我们写的关闭按钮里的 `handleClose()`，导致输入框状态（麦克风面板、语音播放等）没有重置。
+  - 在 `ChatField.vue` 中给 `<dialog>` 绑定 `@close="onDialogClose"`，在 `onDialogClose()` 里调用 `inputRef.value?.close?.()`，这样无论是点击 ✕ 还是按 ESC 关闭，都会执行 `InputField` 的 `close()`（停止语音、收起麦克风）。
+
 ---
 
 ## 1. 前端实现语音输入

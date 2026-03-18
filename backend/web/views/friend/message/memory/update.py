@@ -1,32 +1,41 @@
-import os
+from django.utils.timezone import now
+from langchain_core.messages import SystemMessage, HumanMessage
 
-from typing import Annotated, Sequence, TypedDict
-
-from langchain_core.messages import BaseMessage
-from langgraph.graph import END, START, StateGraph, add_messages
-from langchain_openai import ChatOpenAI
+from web.models.friend import SystemPrompt, Message
+from web.views.friend.message.memory.graph import MemoryGraph
 
 
-class MemoryGraph:
-    @staticmethod
-    def create_app():
-        llm = ChatOpenAI(
-            model='deepseek-v3.2',
-            openai_api_key=os.getenv('API_KEY'),
-            openai_api_base=os.getenv('API_BASE'),
-        )
+def create_system_message():
+    system_prompts = SystemPrompt.objects.filter(title='记忆').order_by('order_number')
+    prompt = ''
+    for sp in system_prompts:
+        prompt += sp.prompt
+    return SystemMessage(prompt)
 
-        class AgentState(TypedDict):
-            messages: Annotated[Sequence[BaseMessage], add_messages]
 
-        def model_call(state: AgentState) -> AgentState:
-            res = llm.invoke(state['messages'])
-            return {'messages': [res]}
-        
-        graph = StateGraph(AgentState)
-        graph.add_node('agent', model_call)
+def create_human_message(friend):
+    prompt = f'【原始记忆】\n{friend.memory}\n'
+    prompt += f'【最近对话】\n'
+    messages = list(Message.objects.filter(friend=friend).order_by('-id')[:10])
+    messages.reverse()
+    for m in messages:
+        prompt += f'user: {m.user_message}\n'
+        prompt += f'ai: {m.output}\n'
+    return HumanMessage(prompt)
 
-        graph.add_edge(START, 'agent')
-        graph.add_edge('agent', END)
 
-        return graph.compile()
+def update_memory(friend):
+    app = MemoryGraph.create_app()
+
+    inputs = {
+        'messages': [
+            create_system_message(),
+            create_human_message(friend),
+        ]
+    }
+
+    res = app.invoke(inputs)
+    friend.memory = res['messages'][-1].content
+
+    friend.update_time = now()
+    friend.save()

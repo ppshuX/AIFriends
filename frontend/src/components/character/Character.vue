@@ -1,8 +1,8 @@
 <script setup>
 import {ref, useTemplateRef, computed} from "vue";
 import {useUserStore} from "@/stores/user.js";
-import UpdateIcon from "@/components/character/icon/UpdateIcon.vue";
-import RemoveIcon from "@/components/character/icon/RemoveIcon.vue";
+import UpdateIcon from "@/components/character/icons/UpdateIcon.vue";
+import RemoveIcon from "@/components/character/icons/RemoveIcon.vue";
 import api, { resolveMediaUrl } from "@/js/http/api.js";
 import {useRouter} from "vue-router";
 import ChatField from "@/components/character/chat_field/ChatField.vue";

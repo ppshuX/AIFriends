@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models.character import Character
+from .models.character import Character, Voice
 from .models.friend import Friend, Message, SystemPrompt
 from .models.user import UserProfile
 
@@ -11,7 +11,10 @@ class UserProfileAdmin(admin.ModelAdmin):
 
 @admin.register(Character)
 class CharacterAdmin(admin.ModelAdmin):
-    raw_id_fields = ('author', )
+    raw_id_fields = ('author', 'voice')
+
+
+admin.site.register(Voice)
 
 
 @admin.register(Friend)

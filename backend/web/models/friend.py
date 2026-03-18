@@ -1,10 +1,13 @@
 from django.db import models
 from django.utils.timezone import now, localtime
 
+from web.models.character import Character
+from web.models.user import UserProfile
+
 
 class Friend(models.Model):
-    me = models.ForeignKey('UserProfile', on_delete=models.CASCADE)
-    character = models.ForeignKey('Character', on_delete=models.CASCADE)
+    me = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
+    character = models.ForeignKey(Character, on_delete=models.CASCADE)
     memory = models.TextField(default="", max_length=5000, blank=True, null=True)
     create_time = models.DateTimeField(default=now)
     update_time = models.DateTimeField(default=now)
@@ -29,10 +32,10 @@ class Message(models.Model):
 
 class SystemPrompt(models.Model):
     title = models.CharField(max_length=100)
-    old_number = models.IntegerField(default=0)
-    prompt = models.TextField(max_length=100000)
+    order_number = models.IntegerField(default=0)
+    prompt = models.TextField(max_length=10000)
     create_time = models.DateTimeField(default=now)
     update_time = models.DateTimeField(default=now)
 
     def __str__(self):
-        return f"{self.title} - {self.old_number} - {self.prompt[:50]} - {localtime(self.create_time).strftime('%Y-%m-%d %H:%M:%S')}"
+        return f"{self.title} - {self.order_number} - {self.prompt[:50]} - {localtime(self.create_time).strftime('%Y-%m-%d %H:%M:%S')}"

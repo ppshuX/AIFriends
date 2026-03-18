@@ -31,7 +31,7 @@ DEBUG = True
 ALLOWED_HOSTS = [
     '127.0.0.1',
     'localhost',
-    '139.129.36.243',
+    '8.147.66.217',
     'app7804.acapp.acwing.com.cn',
 ]
 
@@ -132,7 +132,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 # 设置static和media静态文件路径
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 # collectstatic 收集到的目录，必须与 STATICFILES_DIRS 里的路径不同
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
@@ -170,4 +170,6 @@ CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://app7804.acapp.acwing.com.cn",
 ]

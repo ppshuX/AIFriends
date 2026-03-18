@@ -19,11 +19,8 @@ class ChatGraph:
     def create_app():
         @tool
         def get_time() -> str:
-            """当用户询问当前日期、今天几号、现在几点、星期几、精确时间等与“当前时间/日期”相关的问题时，必须调用此函数获取实时结果，不要自行推测。返回格式为：年-月-日 时:分:秒（时区）。"""
-            from django.utils.timezone import get_current_timezone_name
-            tz_name = get_current_timezone_name() or 'Asia/Shanghai'
-            dt_str = localtime(now()).strftime('%Y-%m-%d %H:%M:%S')
-            return f"{dt_str}（{tz_name}）"
+            """当需要查询精确时间时，调用此函数。返回格式为：[年-月-日 时:分:秒]"""
+            return localtime(now()).strftime('%Y-%m-%d %H:%M:%S')
         
 
         @tool
