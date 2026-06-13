@@ -1,23 +1,89 @@
+# Python
 __pycache__/
 *.py[cod]
-*.env
-.idea/
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Django
+*.log
+local_settings.py
 db.sqlite3
-# 忽略 media，但保留默认头像供部署
-backend/media/*
-!backend/media/user/
-backend/media/user/*
-!backend/media/user/photos/
-backend/media/user/photos/*
-!backend/media/user/photos/default.png
-staticfiles/
-static/
+db.sqlite3-journal
+/media/
+/staticfiles/
+/static/
 
-backend/web/documents/data.txt
-backend/web/documents/lancedb_storage/
+# Environment variables
+.env
+.env.local
+.env.*.local
+*.env
 
-frontend/public/vad/
+# IDE & Editor
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
 
-# 部署配置文件（包含敏感信息）
-deploy-config.ps1
-deploy-config.sh
+# OS
+.DS_Store
+Thumbs.db
+
+# Backup files
+*.backup
+*.bak
+*.original
+
+# Node.js (for frontend)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+/coverage/
+
+# Build outputs
+/frontend/dist/
+/frontend/.nuxt/
+/frontend/.cache/
+
+# Testing
+.pytest_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Temporary files
+*.tmp
+*.temp
+
+# VAD models (public/vad/ 被 git 忽略，但部署时需手动复制)
+/frontend/public/vad/
