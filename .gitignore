@@ -28,6 +28,8 @@ db.sqlite3-journal
 /media/
 /staticfiles/
 /static/
+/backend/static/*
+!/backend/static/.gitkeep
 
 # Environment variables
 .env

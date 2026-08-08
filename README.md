@@ -76,7 +76,7 @@ AIFriends/
 
 ### 环境要求
 
-- Python 3.8+
+- Python 3.12+
 - Node.js 20.19.0+ 或 22.12.0+
 - npm 或 yarn
 
@@ -104,13 +104,17 @@ venv\Scripts\activate
 # Linux/Mac:
 source venv/bin/activate
 
-# 安装依赖
-pip install django==6.0.1
-pip install djangorestframework
-pip install djangorestframework-simplejwt
-pip install django-cors-headers
-pip install langchain
-# 根据实际需求安装其他依赖
+# 安装后端全部依赖
+pip install -r requirements.txt
+
+# 创建本地环境配置
+# Windows PowerShell:
+Copy-Item .env.example .env
+# Linux/macOS:
+cp .env.example .env
+
+# 分别运行两次，生成两个不同的密钥
+python -c "import secrets; print(secrets.token_urlsafe(64))"
 
 # 运行数据库迁移
 python manage.py migrate
@@ -118,6 +122,10 @@ python manage.py migrate
 # 创建超级用户（可选）
 python manage.py createsuperuser
 ```
+
+将密钥生成命令运行两次，把两个不同的输出分别写入 `.env` 中的
+`DJANGO_SECRET_KEY` 和 `JWT_SIGNING_KEY`。示例占位符不能用于启动项目，
+`.env` 也不应提交到版本库。
 
 #### 3. 前端设置
 
@@ -147,13 +155,15 @@ cd frontend
 npm run dev
 ```
 
-**生产模式：**
+**生产部署：**
 
 ```bash
-# 只需启动后端服务，前端已构建到 static 目录
-cd backend
-python manage.py runserver
+# 构建前端后，参考 scripts/uwsgi.ini 和 nginx.conf 启动后端及静态资源服务
+cd frontend
+npm run build
 ```
+
+`manage.py runserver` 仅用于本地开发，不应作为生产服务器。
 
 访问 `http://127.0.0.1:8000/` 即可查看应用。
 
@@ -161,7 +171,17 @@ python manage.py runserver
 
 ### 后端配置
 
-主要配置文件：`backend/backend/settings.py`
+复制 `backend/.env.example` 为 `backend/.env` 后配置后端。项目启动必须提供
+两个相互独立、长度至少为 50 个字符的签名密钥：
+
+- `DJANGO_SECRET_KEY`：Django 框架签名密钥
+- `JWT_SIGNING_KEY`：JWT 独立签名密钥，不能与 Django 密钥相同
+- `DJANGO_DEBUG`：是否启用调试模式，未配置时默认为 `false`
+- `DJANGO_ALLOWED_HOSTS`：逗号分隔的后端主机名
+- `DJANGO_CORS_ALLOWED_ORIGINS`：逗号分隔、包含协议的前端来源
+
+主要设置文件为 `backend/backend/settings.py`，它从环境变量或
+`backend/.env` 读取上述配置。
 
 - **静态文件配置**：
   - `STATIC_URL = 'static/'`
@@ -169,8 +189,8 @@ python manage.py runserver
   - `STATICFILES_DIRS = [BASE_DIR / 'static']`（开发时前端构建产物在 static/frontend）
 
 - **跨域配置**：
-  - `CORS_ALLOWED_ORIGINS`：允许的前端域名
-  - 默认允许 `http://localhost:5173`（Vite 开发服务器）
+  - `DJANGO_CORS_ALLOWED_ORIGINS`：允许的前端来源
+  - `.env.example` 已包含本地 Vite 开发服务器来源
 
 - **JWT 配置**：
   - Access Token 有效期：2 小时
@@ -228,16 +248,16 @@ python manage.py runserver
 ## 🚢 部署概要
 
 1. **克隆**：`git clone <repo>`，进入项目目录
-2. **后端**：`cd backend` → 虚拟环境、`pip install` 依赖、`python manage.py migrate`、`python manage.py collectstatic --noinput`
+2. **后端**：`cd backend` → 创建 `.env`、虚拟环境、`pip install -r requirements.txt`、`python manage.py migrate`、`python manage.py collectstatic --noinput`
 3. **前端**：`cd frontend` → `npm install`、`npm run build`（会输出到 `backend/static/frontend/` 并更新 Django 模板）
 4. **运行**：使用 `scripts/uwsgi.ini` 启动 uWSGI（需先按服务器路径修改 `chdir` 等），Nginx 参考 `nginx.conf` 配置反向代理与静态/媒体路径；`ALLOWED_HOSTS` 需包含域名与服务器 IP
 
 ## 📝 注意事项
 
-1. **开发环境**：当前配置为开发环境（`DEBUG = True`），生产环境需设置 `DEBUG = False`、`ALLOWED_HOSTS`
+1. **环境配置**：本地可使用 `.env.example` 的主机和来源；生产环境必须重新生成两个密钥，设置 `DJANGO_DEBUG=false`，并配置实际的 `DJANGO_ALLOWED_HOSTS` 与 `DJANGO_CORS_ALLOWED_ORIGINS`
 2. **数据库**：开发环境使用 SQLite，生产环境建议使用 PostgreSQL 或 MySQL
 3. **静态文件**：生产环境使用 Nginx 提供 `/static`、`/media`，Django 端执行 `python manage.py collectstatic`
-4. **密钥安全**：生产环境务必修改 `SECRET_KEY` 并妥善保管
+4. **密钥安全**：不要提交 `.env`；Django 与 JWT 必须使用两个不同的随机密钥并妥善保管
 5. **部署**：项目内提供 `nginx.conf`、`scripts/uwsgi.ini` 示例，部署时按实际路径修改后使用
 
 ## 📚 相关资源

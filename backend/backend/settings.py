@@ -11,29 +11,34 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+
+from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
-load_dotenv()
+from backend.env import get_bool, get_csv, get_required_secret
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / '.env')
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-x&v*7pih=^nmb1@6c4^1vzf1ud3c3!m41gk7_t7!$ies12#%+v'
+# SECURITY WARNING: keep signing secrets used in production secret!
+SECRET_KEY = get_required_secret('DJANGO_SECRET_KEY')
+JWT_SIGNING_KEY = get_required_secret('JWT_SIGNING_KEY')
+if SECRET_KEY == JWT_SIGNING_KEY:
+    raise ImproperlyConfigured(
+        'DJANGO_SECRET_KEY and JWT_SIGNING_KEY must be different'
+    )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = get_bool('DJANGO_DEBUG', default=False)
 
-ALLOWED_HOSTS = [
-    '127.0.0.1',
-    'localhost',
-    '8.147.66.217',
-    'app7804.acapp.acwing.com.cn',
-]
+ALLOWED_HOSTS = get_csv(
+    'DJANGO_ALLOWED_HOSTS', default=('127.0.0.1', 'localhost')
+)
 
 
 # Application definition
@@ -163,13 +168,10 @@ SIMPLE_JWT = {
     'BLACKLIST_AFTER_ROTATION': True,
 
     'AUTH_HEADER_TYPES': ('Bearer',),
+    'SIGNING_KEY': JWT_SIGNING_KEY,
 }
 
 # 配置跨域
 CORS_ALLOW_CREDENTIALS = True
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "https://app7804.acapp.acwing.com.cn",
-]
+CORS_ALLOWED_ORIGINS = get_csv('DJANGO_CORS_ALLOWED_ORIGINS')
