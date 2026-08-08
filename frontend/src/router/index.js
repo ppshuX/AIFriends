@@ -1,27 +1,18 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '@/stores/user.js'
-import HomepageIndex from "@/views/homepage/HomepageIndex.vue"
-import FriendIndex from "@/views/friend/FriendIndex.vue"
-import CreateIndex from "@/views/create/CreateIndex.vue"
-import LoginIndex from "@/views/user/account/LoginIndex.vue"
-import RegisterIndex from "@/views/user/account/RegisterIndex.vue"
-import SpaceIndex from "@/views/user/space/SpaceIndex.vue"
-import ProfileIndex from "@/views/user/profile/ProfileIndex.vue"
-import NotFoundIndex from "@/views/error/NotFoundIndex.vue"
-import UpdateCharacter from "@/views/create/character/UpdateCharacter.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    { path: '/', component: HomepageIndex, name: 'homepage-index', meta: { needLogin: false } },
-    { path: '/friend/', component: FriendIndex, name: 'friend-index', meta: { needLogin: true } },
-    { path: '/create/', component: CreateIndex, name: 'create-index', meta: { needLogin: true } },
-    { path: '/create/character/update/:character_id/', component: UpdateCharacter, name: 'update-character', meta: { needLogin: true } },
-    { path: '/login/', component: LoginIndex, name: 'user-account-login-index', meta: { needLogin: false } },
-    { path: '/register/', component: RegisterIndex, name: 'user-account-register-index', meta: { needLogin: false } },
-    { path: '/user/space/:user_id/', component: SpaceIndex, name: 'user-space-index', meta: { needLogin: true } },
-    { path: '/user/profile/', component: ProfileIndex, name: 'user-profile-index', meta: { needLogin: true } },
-    { path: '/:pathMatch(.*)*', component: NotFoundIndex, name: 'not-found' },
+    { path: '/', component: () => import('@/views/homepage/HomepageIndex.vue'), name: 'homepage-index', meta: { needLogin: false } },
+    { path: '/friend/', component: () => import('@/views/friend/FriendIndex.vue'), name: 'friend-index', meta: { needLogin: true } },
+    { path: '/create/', component: () => import('@/views/create/CreateIndex.vue'), name: 'create-index', meta: { needLogin: true } },
+    { path: '/create/character/update/:character_id/', component: () => import('@/views/create/character/UpdateCharacter.vue'), name: 'update-character', meta: { needLogin: true } },
+    { path: '/login/', component: () => import('@/views/user/account/LoginIndex.vue'), name: 'user-account-login-index', meta: { needLogin: false } },
+    { path: '/register/', component: () => import('@/views/user/account/RegisterIndex.vue'), name: 'user-account-register-index', meta: { needLogin: false } },
+    { path: '/user/space/:user_id/', component: () => import('@/views/user/space/SpaceIndex.vue'), name: 'user-space-index', meta: { needLogin: true } },
+    { path: '/user/profile/', component: () => import('@/views/user/profile/ProfileIndex.vue'), name: 'user-profile-index', meta: { needLogin: true } },
+    { path: '/:pathMatch(.*)*', component: () => import('@/views/error/NotFoundIndex.vue'), name: 'not-found' },
   ],
 })
 
