@@ -66,7 +66,7 @@ AIFriends/
 │   └── vite.config.js       # 构建输出到 backend/static/frontend
 ├── scripts/                 # 部署与构建脚本
 │   ├── uwsgi.ini            # uWSGI 配置
-│   └── update-django-static.js  # 构建后更新 Django 模板中的静态路径
+│   └── update-django-static.cjs # 构建后更新 Django 模板中的静态路径
 ├── nginx.conf               # Nginx 配置示例
 ├── deploy-frontend.ps1      # 前端构建与部署脚本（Windows）
 └── README.md
@@ -182,7 +182,7 @@ python manage.py runserver
 
 - 开发服务器端口：5173
 - 构建输出目录：`../backend/static/frontend`（与 Django 静态目录一致）
-- `npm run build` 后会自动执行 `scripts/update-django-static.js`，同步 Django 模板中的 js/css 路径
+- `npm run build` 后会自动执行 `scripts/update-django-static.cjs`，同步 Django 模板中的 js/css 路径
 
 ## 📡 API 接口
 
