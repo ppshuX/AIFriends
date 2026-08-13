@@ -35,7 +35,8 @@ This maintenance cycle includes the following changes:
 - Updated character chat and memory generation to the active TokenHub model, `deepseek-v4-flash-202605`.
 - Added four official demo characters, four Tencent Cloud voices, a default avatar, character artwork, and baseline system prompts.
 - Fixed the post-build Django template updater for an ESM frontend package.
-- Added model configuration, Tencent TTS protocol, and demo seeding tests. The backend suite currently contains 14 tests.
+- Added model configuration, Tencent TTS protocol, demo seeding, security configuration, and authentication cookie tests. The backend suite currently contains 27 tests.
+- Moved Django secrets, debug mode, allowed hosts, and CORS origins to environment variables, with a separate signing key for JWTs.
 - Verified the deployment on a Tencent Cloud server with a real model response, a real Tencent Cloud MP3 synthesis request, and a public HTTP health check.
 
 Further documentation:
@@ -151,17 +152,43 @@ Activate the virtual environment:
 source .venv/bin/activate
 ```
 
-Install dependencies and initialize the database:
+Install dependencies:
 
 ```bash
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
-python manage.py migrate
 ```
 
-Create `backend/.env` and add the services you plan to use. Never commit real credentials:
+Copy the environment template:
+
+```powershell
+# Windows PowerShell
+Copy-Item .env.example .env
+```
+
+```bash
+# Linux / macOS
+cp .env.example .env
+```
+
+Run the following command twice and place the two different results in `DJANGO_SECRET_KEY` and `JWT_SIGNING_KEY` in `.env`. Each secret must be at least 50 characters. Never commit real credentials:
+
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(64))"
+```
+
+For local development, you can keep `DJANGO_DEBUG=true` and the localhost host/CORS values from the template. For production, disable debug mode and set the actual domains. Configure the AI, ASR, and TTS services you need:
 
 ```dotenv
+# Required application secrets; generate two different values
+DJANGO_SECRET_KEY=replace-with-generated-secret
+JWT_SIGNING_KEY=replace-with-independent-generated-secret
+
+# Local development only
+DJANGO_DEBUG=true
+DJANGO_ALLOWED_HOSTS=127.0.0.1,localhost
+DJANGO_CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+
 # TokenHub / OpenAI-compatible chat API
 API_BASE=https://tokenhub.tencentmaas.com/v1
 API_KEY=replace-with-your-api-key
@@ -173,6 +200,12 @@ WSS_URL=replace-with-your-dashscope-websocket-url
 TENCENT_TTS_APP_ID=replace-with-your-app-id
 TENCENT_TTS_SECRET_ID=replace-with-your-secret-id
 TENCENT_TTS_SECRET_KEY=replace-with-your-secret-key
+```
+
+Initialize the database:
+
+```bash
+python manage.py migrate
 ```
 
 Optionally install the official demo content. The command is idempotent and does not delete other users' data:
@@ -262,7 +295,7 @@ A recommended production flow is:
 
 ## Known Limits and Security Notes
 
-- `backend/backend/settings.py` still contains course-oriented development defaults, including `DEBUG = True`, an example `SECRET_KEY`, and fixed hosts. Move these values to environment variables and run `python manage.py check --deploy` before a public deployment.
+- Django startup requires two different random secrets of at least 50 characters: `DJANGO_SECRET_KEY` and `JWT_SIGNING_KEY`. In production, also set `DJANGO_DEBUG=false`, the actual hosts and CORS origins, and run `python manage.py check --deploy`.
 - SQLite is suitable for local development and small demonstrations. Evaluate PostgreSQL/MySQL and external object storage before running multiple application instances or serving higher traffic.
 - Tencent Cloud support currently covers numeric built-in `VoiceType` values. Voice cloning `FastVoiceType` values are not supported.
 - The bundled knowledge data and character prompts are examples. A public community needs explicit content safety, privacy, and minor protection policies.

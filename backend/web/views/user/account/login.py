@@ -5,6 +5,8 @@ from rest_framework.response import Response
 from ....models.user import UserProfile
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from .cookies import set_refresh_token_cookie
+
 
 class Login(APIView):
     def post(self, request, *args, **kwargs):
@@ -36,15 +38,7 @@ class Login(APIView):
                 'photo': photo_url,
                 'profile': profile,
             })
-            # 开发环境使用 http，不能设置 secure=True，否则浏览器不会发送 cookie
-            response.set_cookie(
-                key='refresh_token',
-                value=str(refresh),
-                httponly=True,
-                samesite='Lax',
-                secure=False,   # 本地开发必须为 False，生产环境再改回 True
-                max_age=86400 * 7,
-            )
+            set_refresh_token_cookie(response, refresh)
             return response
         except Exception:
             return Response({'result': '系统异常，请稍后重试'})

@@ -35,7 +35,8 @@ AIFriends 是一个面向学习、实验和开源协作的完整 LLM 应用。�
 - 将角色对话与记忆模型切换到 TokenHub 当前可用的 `deepseek-v4-flash-202605`。
 - 增加 4 个官方演示角色、4 个腾讯云音色、默认头像、角色图片和基础系统提示词。
 - 修复前端构建后静态模板更新脚本在 ESM 项目中的执行问题。
-- 增加模型配置、腾讯云 TTS 协议和演示数据幂等性测试；当前后端测试共 14 项。
+- 增加模型配置、腾讯云 TTS 协议、演示数据幂等性、安全配置和认证 Cookie 测试；当前后端测试共 27 项。
+- 将 Django 密钥、调试模式、允许域名和 CORS 来源迁移到环境变量，并为 JWT 使用独立签名密钥。
 - 已在腾讯云服务器完成部署验证，并对真实模型调用、真实腾讯云 MP3 合成和公网访问进行验收。
 
 详细说明：
@@ -151,17 +152,43 @@ python -m venv .venv
 source .venv/bin/activate
 ```
 
-安装依赖并初始化数据库：
+安装依赖：
 
 ```bash
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
-python manage.py migrate
 ```
 
-在 `backend/.env` 中配置所需服务。真实密钥不得提交到 Git：
+复制环境变量模板：
+
+```powershell
+# Windows PowerShell
+Copy-Item .env.example .env
+```
+
+```bash
+# Linux / macOS
+cp .env.example .env
+```
+
+分别执行以下命令两次，将生成的两个不同结果填入 `.env` 的 `DJANGO_SECRET_KEY` 和 `JWT_SIGNING_KEY`。每个密钥至少需要 50 个字符，真实密钥不得提交到 Git：
+
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(64))"
+```
+
+本地开发可保留模板中的 `DJANGO_DEBUG=true`、本地域名和本地 CORS 来源。生产环境必须改为实际域名并关闭调试模式。按需继续配置 AI、ASR 和 TTS 服务：
 
 ```dotenv
+# Required application secrets; generate two different values
+DJANGO_SECRET_KEY=replace-with-generated-secret
+JWT_SIGNING_KEY=replace-with-independent-generated-secret
+
+# Local development only
+DJANGO_DEBUG=true
+DJANGO_ALLOWED_HOSTS=127.0.0.1,localhost
+DJANGO_CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+
 # TokenHub / OpenAI-compatible chat API
 API_BASE=https://tokenhub.tencentmaas.com/v1
 API_KEY=replace-with-your-api-key
@@ -173,6 +200,12 @@ WSS_URL=replace-with-your-dashscope-websocket-url
 TENCENT_TTS_APP_ID=replace-with-your-app-id
 TENCENT_TTS_SECRET_ID=replace-with-your-secret-id
 TENCENT_TTS_SECRET_KEY=replace-with-your-secret-key
+```
+
+初始化数据库：
+
+```bash
+python manage.py migrate
 ```
 
 可选：安装官方演示内容。命令可以重复执行，不会删除其他用户数据。
@@ -262,7 +295,7 @@ npm run build
 
 ## 已知边界与安全提醒
 
-- `backend/backend/settings.py` 仍保留课程开发配置，包括 `DEBUG = True`、示例 `SECRET_KEY` 和固定域名。公开部署前必须改为环境变量配置并运行 `python manage.py check --deploy`。
+- Django 启动要求配置两个不同且至少 50 个字符的随机密钥：`DJANGO_SECRET_KEY` 和 `JWT_SIGNING_KEY`。生产环境还应设置 `DJANGO_DEBUG=false`、实际域名与 CORS 来源，并运行 `python manage.py check --deploy`。
 - SQLite 适合本地开发和小规模演示。多实例或高并发部署应评估 PostgreSQL/MySQL 与独立对象存储。
 - 腾讯云实现目前支持数字 `VoiceType` 预置音色，不支持声音复刻产生的 `FastVoiceType`。
 - 知识库示例内容和默认角色提示词仅用于演示，正式社区需要补充内容安全、隐私与未成年人保护规则。
