@@ -37,10 +37,10 @@ AIFriends 的近期维护包含由 OpenAI Codex 辅助完成的仓库分析、�
 提交的主要作者保留为项目维护者，并在提交消息末尾加入：
 
 ```text
-Co-authored-by: Codex <chatgpt-codex-connector[bot]@users.noreply.github.com>
+Co-authored-by: Codex <267193182+codex@users.noreply.github.com>
 ```
 
-该邮箱对应 OpenAI 所有的 `chatgpt-codex-connector[bot]` GitHub App。共同作者信息只用于本次确有 Codex 参与的文档改动，不作为未来提交的强制模板。
+该邮箱对应 GitHub 用户 [`@codex`](https://github.com/codex)，其公开资料标识为 OpenAI 的 coding agent。共同作者信息只用于确有 Codex 参与的改动，不作为未来提交的强制模板。
 
 ## 验证
 

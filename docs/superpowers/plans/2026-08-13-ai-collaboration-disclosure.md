@@ -14,7 +14,7 @@
 - Codex 的范围限定为部分仓库分析、实现辅助、测试和文档工作。
 - 项目维护者负责审核、验证、合并决定和后续维护。
 - 不夸大 Codex 的自主性，不修改程序行为，不重写历史。
-- 实现提交使用 `Co-authored-by: Codex <chatgpt-codex-connector[bot]@users.noreply.github.com>`。
+- 实现提交使用 `Co-authored-by: Codex <267193182+codex@users.noreply.github.com>`。
 
 ---
 
@@ -76,8 +76,8 @@ git diff --name-only HEAD
 
 ```powershell
 git add README.md README_EN.md
-git commit -m "docs: disclose AI collaboration" -m "Co-authored-by: Codex <chatgpt-codex-connector[bot]@users.noreply.github.com>"
+git commit -m "docs: disclose AI collaboration" -m "Co-authored-by: Codex <267193182+codex@users.noreply.github.com>"
 git show -s --format='%H%n%B' HEAD
 ```
 
-预期：提交成功，提交正文包含准确的 Codex Bot 共同作者尾注。
+预期：提交成功，提交正文包含映射到 GitHub 用户 [`@codex`](https://github.com/codex) 的共同作者尾注。
