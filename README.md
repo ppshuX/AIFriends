@@ -1,280 +1,321 @@
-# AIFriends 
-> 一个大模型应用入门项目，支持用户创建并分享虚拟角色，实现语音交互和智能对话
+# AIFriends
 
-## 项目地址：https://app7804.acapp.acwing.com.cn/
-<img width="2559" height="1452" alt="image" src="https://github.com/user-attachments/assets/5aea2de6-edbe-4649-adff-0104b3580a96" />
+[English](README_EN.md) | **简体中文**
 
-## 📖 项目简介
+> 一个开源的 AI 角色创作与交互平台。用户可以创建角色、配置人格和音色，并通过文字或语音与角色持续对话。
 
-AIFriends 是一个基于大语言模型的虚拟角色创作分享平台。用户可以创建任意多个虚拟女友/男友/朋友，自定义角色音色、性格、简介，并通过语音识别、语音合成、语音复刻等技术实现与虚拟人物的语音通话交流。
+在线演示：[https://app7804.acapp.acwing.com.cn/](https://app7804.acapp.acwing.com.cn/)
 
-本项目采用前后端分离架构，后端使用 Django，前端使用 Vue3，大模型框架采用 LangChain。
+![AIFriends 项目截图](https://github.com/user-attachments/assets/5aea2de6-edbe-4649-adff-0104b3580a96)
 
-## ✨ 功能特性
+## 项目简介
 
-- 🎭 **角色创建与管理**：支持创建并分享任意多个虚拟角色，可自定义音色、性格、简介
-- 🎤 **语音交互**：支持语音识别、语音合成、语音复刻，实现与虚拟人物语音通话交流
-- 🤖 **智能对话**：基于大语言模型的智能对话系统
-- 🔧 **Function Call**：支持函数调用功能
-- 📚 **知识库**：支持知识库功能
-- 🔐 **用户认证**：基于 JWT 的用户认证系统
-- 🌐 **跨域支持**：配置了 CORS 跨域资源共享
+AIFriends 是一个面向学习、实验和开源协作的完整 LLM 应用。项目采用 Vue 3 与 Django 的前后端分离架构，通过 LangChain、LangGraph 和 OpenAI 兼容接口组织角色对话、工具调用、知识库检索与长期记忆，并通过流式接口同步返回文本和语音。
 
-## 🛠️ 技术栈
+项目最初来自大模型应用开发课程，目前已重新进入维护阶段。现阶段优先保证部署可用、配置安全、测试可重复，并逐步改善新贡献者体验。
 
-### 后端
-- **框架**：Django 6.0.1
-- **认证**：Django REST Framework + Simple JWT
-- **大模型框架**：LangChain
-- **数据库**：SQLite（开发环境）
-- **跨域**：django-cors-headers
+## 当前能力
+
+- 角色创建、编辑、删除、分享与好友管理
+- 角色头像、聊天背景、人格描述、系统提示词和音色配置
+- 基于 `deepseek-v4-flash-202605` 的流式角色对话
+- LangGraph 工具调用：当前包含时间查询与 LanceDB 知识库检索
+- 最近对话上下文与角色长期记忆更新
+- JWT 登录、注册、刷新令牌和用户资料管理
+- 阿里云实时语音识别（ASR）
+- 腾讯云流式文本语音合成（TTS），兼容已有阿里云音色
+- 可重复执行的官方演示内容初始化命令
+
+## 2026 年 8 月维护更新
+
+本轮维护完成了以下改进：
+
+- 接入腾讯云流式文本语音合成，支持签名鉴权、READY/FINAL 事件和 MP3 音频分片回传。
+- 保留旧音色兼容规则：`tencent:<VoiceType>` 使用腾讯云，`aliyun:<voice>` 和无前缀旧数据继续使用阿里云。
+- 将角色对话与记忆模型切换到 TokenHub 当前可用的 `deepseek-v4-flash-202605`。
+- 增加 4 个官方演示角色、4 个腾讯云音色、默认头像、角色图片和基础系统提示词。
+- 修复前端构建后静态模板更新脚本在 ESM 项目中的执行问题。
+- 增加模型配置、腾讯云 TTS 协议、演示数据幂等性、安全配置和认证 Cookie 测试；当前后端测试共 27 项。
+- 将 Django 密钥、调试模式、允许域名和 CORS 来源迁移到环境变量，并为 JWT 使用独立签名密钥。
+- 已在腾讯云服务器完成部署验证，并对真实模型调用、真实腾讯云 MP3 合成和公网访问进行验收。
+
+详细说明：
+
+- [腾讯云流式语音合成接入指南](docs/tencent-cloud-tts.md)
+- [官方演示内容维护说明](docs/demo-content.md)
+
+## 技术栈
 
 ### 前端
-- **框架**：Vue 3.5.26
-- **构建工具**：Vite 7.3.0
-- **路由**：Vue Router 4.6.4
-- **状态管理**：Pinia 3.0.4
 
-## 📁 项目结构
+- Vue 3.5
+- Vite 7
+- Vue Router 4
+- Pinia 3
+- Tailwind CSS 4 + daisyUI 5
+- Axios、VAD Web
 
+### 后端与 AI
+
+- Python 3.12+
+- Django 6 + Django REST Framework
+- Simple JWT
+- LangChain + LangGraph
+- OpenAI 兼容模型接口（当前使用腾讯云 TokenHub）
+- LanceDB 向量存储
+- SQLite
+- WebSocket + Server-Sent Events
+
+### 外部服务
+
+- 腾讯云 TokenHub：角色对话和长期记忆模型
+- 腾讯云语音合成：流式 MP3 TTS
+- 阿里云 DashScope：实时 ASR，并兼容原有 TTS/音色管理流程
+
+## 架构概览
+
+```text
+Browser
+  │
+  ├─ Vue 3 SPA
+  │    ├─ REST API：认证、角色、好友、历史消息
+  │    └─ SSE：对话文本与 Base64 MP3 音频分片
+  │
+  └─ Django + DRF
+       ├─ LangGraph：角色提示词、近期消息、工具调用
+       ├─ OpenAI-compatible API：DeepSeek 模型
+       ├─ LanceDB：知识库检索
+       ├─ Tencent Cloud TTS / Aliyun ASR
+       └─ SQLite + media：业务数据与用户图片
 ```
+
+## 项目结构
+
+```text
 AIFriends/
-├── backend/                 # Django 后端项目
-│   ├── backend/             # Django 项目配置
-│   │   ├── settings.py      # 项目设置
-│   │   ├── urls.py          # 主 URL 配置
-│   │   └── wsgi.py          # WSGI 入口
-│   ├── web/                 # Web 应用
-│   │   ├── views/           # 视图（含 user/account 登录注册等）
-│   │   ├── templates/       # 模板（index.html 为前端入口）
-│   │   ├── urls.py          # URL 路由
-│   │   └── models/          # 数据模型（如 UserProfile）
-│   ├── static/              # 静态文件（Vite 构建输出到此）
-│   │   └── frontend/        # 前端构建产物
-│   ├── staticfiles/        # collectstatic 收集目录（生产）
-│   ├── media/               # 用户上传文件（如头像）
-│   ├── manage.py
-│   └── db.sqlite3
-├── frontend/                # Vue3 前端项目
-│   ├── src/
-│   │   ├── components/     # 组件（NavBar、UserMenu 等）
-│   │   ├── views/           # 页面（首页、登录、注册等）
-│   │   ├── router/          # 路由与守卫
-│   │   ├── stores/          # Pinia（user 等）
-│   │   └── js/http/         # axios 封装（api.js）
-│   ├── package.json         # 含 postbuild：同步 Django 模板
-│   └── vite.config.js       # 构建输出到 backend/static/frontend
-├── scripts/                 # 部署与构建脚本
-│   ├── uwsgi.ini            # uWSGI 配置
-│   └── update-django-static.js  # 构建后更新 Django 模板中的静态路径
-├── nginx.conf               # Nginx 配置示例
-├── deploy-frontend.ps1      # 前端构建与部署脚本（Windows）
-└── README.md
+├── backend/
+│   ├── backend/                  # Django 配置与入口
+│   ├── web/
+│   │   ├── management/commands/ # 演示内容初始化命令
+│   │   ├── demo_assets/         # 官方演示角色与默认图片
+│   │   ├── documents/           # 知识库数据与 LanceDB 逻辑
+│   │   ├── models/              # 用户、角色、好友、消息等模型
+│   │   ├── views/               # REST、SSE、ASR、TTS 和 AI 图
+│   │   └── test_*.py            # 后端测试
+│   ├── media/                   # 用户上传文件（不提交到 Git）
+│   ├── static/                  # Vite 构建输出
+│   └── manage.py
+├── frontend/
+│   ├── src/components/          # 通用组件
+│   ├── src/views/               # 页面与业务组件
+│   ├── src/router/              # 路由
+│   ├── src/stores/              # Pinia 状态
+│   └── src/js/                  # API 与运行环境配置
+├── docs/                        # 接入与维护文档
+├── Lessons/                     # 课程学习记录
+├── scripts/                     # uWSGI 与构建辅助脚本
+├── nginx.conf                   # Nginx 配置示例
+└── deploy-frontend.ps1          # Windows 前端部署脚本
 ```
 
-## 🚀 快速开始
+## 本地开发
 
 ### 环境要求
 
 - Python 3.12+
-- Node.js 20.19.0+ 或 22.12.0+
-- npm 或 yarn
+- Node.js 20.19+ 或 22.12+
+- npm
 
-### 安装步骤
-
-#### 1. 克隆项目
+### 1. 克隆仓库
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/ppshuX/AIFriends.git
 cd AIFriends
 ```
 
-#### 2. 后端设置
+### 2. 配置后端
 
 ```bash
-# 进入后端目录
 cd backend
+python -m venv .venv
+```
 
-# 创建虚拟环境（推荐）
-python -m venv venv
+激活虚拟环境：
 
-# 激活虚拟环境
-# Windows:
-venv\Scripts\activate
-# Linux/Mac:
-source venv/bin/activate
+```powershell
+# Windows PowerShell
+.\.venv\Scripts\Activate.ps1
+```
 
-# 安装后端全部依赖
-pip install -r requirements.txt
+```bash
+# Linux / macOS
+source .venv/bin/activate
+```
 
-# 创建本地环境配置
-# Windows PowerShell:
+安装依赖：
+
+```bash
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
+复制环境变量模板：
+
+```powershell
+# Windows PowerShell
 Copy-Item .env.example .env
-# Linux/macOS:
+```
+
+```bash
+# Linux / macOS
 cp .env.example .env
+```
 
-# 分别运行两次，生成两个不同的密钥
+分别执行以下命令两次，将生成的两个不同结果填入 `.env` 的 `DJANGO_SECRET_KEY` 和 `JWT_SIGNING_KEY`。每个密钥至少需要 50 个字符，真实密钥不得提交到 Git：
+
+```bash
 python -c "import secrets; print(secrets.token_urlsafe(64))"
+```
 
-# 运行数据库迁移
+本地开发可保留模板中的 `DJANGO_DEBUG=true`、本地域名和本地 CORS 来源。生产环境必须改为实际域名并关闭调试模式。按需继续配置 AI、ASR 和 TTS 服务：
+
+```dotenv
+# Required application secrets; generate two different values
+DJANGO_SECRET_KEY=replace-with-generated-secret
+JWT_SIGNING_KEY=replace-with-independent-generated-secret
+
+# Local development only
+DJANGO_DEBUG=true
+DJANGO_ALLOWED_HOSTS=127.0.0.1,localhost
+DJANGO_CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+
+# TokenHub / OpenAI-compatible chat API
+API_BASE=https://tokenhub.tencentmaas.com/v1
+API_KEY=replace-with-your-api-key
+
+# Aliyun realtime ASR and legacy TTS
+WSS_URL=replace-with-your-dashscope-websocket-url
+
+# Required when using tencent:<VoiceType>
+TENCENT_TTS_APP_ID=replace-with-your-app-id
+TENCENT_TTS_SECRET_ID=replace-with-your-secret-id
+TENCENT_TTS_SECRET_KEY=replace-with-your-secret-key
+```
+
+初始化数据库：
+
+```bash
 python manage.py migrate
-
-# 创建超级用户（可选）
-python manage.py createsuperuser
 ```
 
-将密钥生成命令运行两次，把两个不同的输出分别写入 `.env` 中的
-`DJANGO_SECRET_KEY` 和 `JWT_SIGNING_KEY`。示例占位符不能用于启动项目，
-`.env` 也不应提交到版本库。
-
-#### 3. 前端设置
+可选：安装官方演示内容。命令可以重复执行，不会删除其他用户数据。
 
 ```bash
-# 进入前端目录
-cd frontend
-
-# 安装依赖
-npm install
-
-# 构建前端项目（生产环境）
-# 构建产物输出到 backend/static/frontend/，并自动更新 backend/web/templates/index.html 中的静态路径
-npm run build
+python manage.py seed_demo_content
 ```
 
-#### 4. 运行项目
-
-**开发模式：**
+启动后端：
 
 ```bash
-# 终端1：启动后端服务
-cd backend
-python manage.py runserver
-
-# 终端2：启动前端开发服务器
-cd frontend
-npm run dev
-```
-
-**生产部署：**
-
-```bash
-# 构建前端后，参考 scripts/uwsgi.ini 和 nginx.conf 启动后端及静态资源服务
-cd frontend
-npm run build
-```
-
-`manage.py runserver` 仅用于本地开发，不应作为生产服务器。
-
-访问 `http://127.0.0.1:8000/` 即可查看应用。
-
-## ⚙️ 配置说明
-
-### 后端配置
-
-复制 `backend/.env.example` 为 `backend/.env` 后配置后端。项目启动必须提供
-两个相互独立、长度至少为 50 个字符的签名密钥：
-
-- `DJANGO_SECRET_KEY`：Django 框架签名密钥
-- `JWT_SIGNING_KEY`：JWT 独立签名密钥，不能与 Django 密钥相同
-- `DJANGO_DEBUG`：是否启用调试模式，未配置时默认为 `false`
-- `DJANGO_ALLOWED_HOSTS`：逗号分隔的后端主机名
-- `DJANGO_CORS_ALLOWED_ORIGINS`：逗号分隔、包含协议的前端来源
-
-主要设置文件为 `backend/backend/settings.py`，它从环境变量或
-`backend/.env` 读取上述配置。
-
-- **静态文件配置**：
-  - `STATIC_URL = 'static/'`
-  - `STATIC_ROOT = BASE_DIR / 'staticfiles'`（生产环境 collectstatic 目标）
-  - `STATICFILES_DIRS = [BASE_DIR / 'static']`（开发时前端构建产物在 static/frontend）
-
-- **跨域配置**：
-  - `DJANGO_CORS_ALLOWED_ORIGINS`：允许的前端来源
-  - `.env.example` 已包含本地 Vite 开发服务器来源
-
-- **JWT 配置**：
-  - Access Token 有效期：2 小时
-  - Refresh Token 有效期：7 天
-
-### 前端配置
-
-主要配置文件：`frontend/vite.config.js`
-
-- 开发服务器端口：5173
-- 构建输出目录：`../backend/static/frontend`（与 Django 静态目录一致）
-- `npm run build` 后会自动执行 `scripts/update-django-static.js`，同步 Django 模板中的 js/css 路径
-
-## 📡 API 接口
-
-### 用户认证
-
-- `POST /api/user/account/login/` - 登录（返回 access，cookie 设置 refresh_token）
-- `POST /api/user/account/register/` - 注册
-- `POST /api/user/account/logout/` - 退出（需登录，删除 refresh_token cookie）
-- `POST /api/user/account/refresh_token/` - 使用 cookie 中的 refresh_token 刷新 access
-- `GET /api/user/account/get_user_info/` - 获取当前用户信息（需登录）
-
-### 页面与静态
-
-- `GET /` 及前端路由 - 返回前端 SPA 入口，由 Vue Router 接管
-- `/static/`、`/media/` - 静态与媒体文件
-
-## 🔧 开发说明
-
-### 前端开发
-
-前端使用 Vue3 + Vite 开发，支持热重载：
-
-```bash
-cd frontend
-npm run dev
-```
-
-开发完成后执行 `npm run build`，构建产物会输出到 `backend/static/frontend/`，并自动更新 `backend/web/templates/index.html` 中的静态引用。
-
-### 后端开发
-
-后端使用 Django 开发，支持自动重载：
-
-```bash
-cd backend
 python manage.py runserver
 ```
 
-### 静态文件加载
+### 3. 配置前端
 
-项目使用 Django 的静态文件系统，模板中使用 `{% load static %}` 和 `{% static %}` 标签加载静态资源。
+打开 `frontend/src/js/config/config.js`，本地前后端分离开发时将：
 
-## 🚢 部署概要
+```js
+const platform = 'cloud'
+```
 
-1. **克隆**：`git clone <repo>`，进入项目目录
-2. **后端**：`cd backend` → 创建 `.env`、虚拟环境、`pip install -r requirements.txt`、`python manage.py migrate`、`python manage.py collectstatic --noinput`
-3. **前端**：`cd frontend` → `npm install`、`npm run build`（会输出到 `backend/static/frontend/` 并更新 Django 模板）
-4. **运行**：使用 `scripts/uwsgi.ini` 启动 uWSGI（需先按服务器路径修改 `chdir` 等），Nginx 参考 `nginx.conf` 配置反向代理与静态/媒体路径；`ALLOWED_HOSTS` 需包含域名与服务器 IP
+改为：
 
-## 📝 注意事项
+```js
+const platform = 'vue'
+```
 
-1. **环境配置**：本地可使用 `.env.example` 的主机和来源；生产环境必须重新生成两个密钥，设置 `DJANGO_DEBUG=false`，并配置实际的 `DJANGO_ALLOWED_HOSTS` 与 `DJANGO_CORS_ALLOWED_ORIGINS`
-2. **数据库**：开发环境使用 SQLite，生产环境建议使用 PostgreSQL 或 MySQL
-3. **静态文件**：生产环境使用 Nginx 提供 `/static`、`/media`，Django 端执行 `python manage.py collectstatic`
-4. **密钥安全**：不要提交 `.env`；Django 与 JWT 必须使用两个不同的随机密钥并妥善保管
-5. **部署**：项目内提供 `nginx.conf`、`scripts/uwsgi.ini` 示例，部署时按实际路径修改后使用
+然后启动 Vite：
 
-## 📚 相关资源
+```bash
+cd ../frontend
+npm ci
+npm run dev
+```
 
-- [Django 官方文档](https://docs.djangoproject.com/)
-- [Vue 3 官方文档](https://cn.vuejs.org/)
-- [LangChain 文档](https://python.langchain.com/)
-- [Django REST Framework 文档](https://www.django-rest-framework.org/)
+访问 [http://localhost:5173/](http://localhost:5173/)。Django 默认运行在 `http://127.0.0.1:8000/`。
 
-## 📄 许可证
+### 4. 构建前端
 
-本项目采用 [MIT License](LICENSE) 开源。
+```bash
+cd frontend
+npm run build
+```
 
-## 👥 贡献
+构建产物写入 `backend/static/frontend/`。`postbuild` 会运行 `scripts/update-django-static.cjs`，自动更新 Django SPA 模板中的静态资源引用。
 
-欢迎提交 Issue 和 Pull Request！
+## 测试
 
----
+运行完整后端测试：
 
-**注意**：本项目为课程项目，更多信息请参考课程页面。
+```bash
+cd backend
+python manage.py test web --verbosity 2
+```
+
+单独验证本轮维护功能：
+
+```bash
+python manage.py test web.test_model_configuration --verbosity 2
+python manage.py test web.test_tencent_tts --verbosity 2
+python manage.py test web.test_seed_demo_content --verbosity 2
+```
+
+前端生产构建检查：
+
+```bash
+cd frontend
+npm ci
+npm run build
+```
+
+测试中的腾讯云 TTS 用例使用模拟 WebSocket，不会访问云服务，也不需要真实密钥。真实联调会产生云服务用量。
+
+## 部署说明
+
+当前在线实例运行在腾讯云服务器。仓库中的 `nginx.conf`、`scripts/uwsgi.ini` 和 `deploy-frontend.ps1` 是部署参考，不是一键部署方案；使用前需按服务器路径、域名和进程管理方式调整。
+
+推荐的生产流程：
+
+1. 安装后端依赖，执行数据库迁移。
+2. 构建前端并执行 `python manage.py collectstatic --noinput`。
+3. 将 `db.sqlite3`、`media/` 和 LanceDB 数据放入持久化存储，并在更新前备份。
+4. 通过服务器环境变量、只读 `.env` 或密钥管理服务注入凭据。
+5. 使用 Gunicorn/uWSGI 托管 Django，由 Nginx 提供 HTTPS、静态文件和媒体文件。
+6. 部署后检查首页、登录、角色对话、模型调用和真实 TTS 音频。
+
+## 已知边界与安全提醒
+
+- Django 启动要求配置两个不同且至少 50 个字符的随机密钥：`DJANGO_SECRET_KEY` 和 `JWT_SIGNING_KEY`。生产环境还应设置 `DJANGO_DEBUG=false`、实际域名与 CORS 来源，并运行 `python manage.py check --deploy`。
+- SQLite 适合本地开发和小规模演示。多实例或高并发部署应评估 PostgreSQL/MySQL 与独立对象存储。
+- 腾讯云实现目前支持数字 `VoiceType` 预置音色，不支持声音复刻产生的 `FastVoiceType`。
+- 知识库示例内容和默认角色提示词仅用于演示，正式社区需要补充内容安全、隐私与未成年人保护规则。
+- 云服务会产生用量和费用。请设置资源包提醒、调用限制和最小权限子账号，并定期轮换密钥。
+
+## 贡献
+
+欢迎提交 Issue 和 Pull Request。建议在提交前完成：
+
+```bash
+cd backend
+python manage.py test web --verbosity 2
+
+cd ../frontend
+npm ci
+npm run build
+```
+
+提交应围绕一个可验证的问题，说明变更原因、测试方法和用户影响。不要提交 `.env`、数据库、媒体文件、IDE 配置或云服务密钥。
+
+## 许可证
+
+AIFriends 使用 [MIT License](LICENSE) 开源。

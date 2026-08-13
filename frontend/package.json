@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "postbuild": "node ../scripts/update-django-static.js",
+    "postbuild": "node ../scripts/update-django-static.cjs",
     "preview": "vite preview"
   },
   "dependencies": {

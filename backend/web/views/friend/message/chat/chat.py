@@ -16,6 +16,13 @@ from rest_framework.permissions import IsAuthenticated
 
 from web.models.friend import Friend, Message, SystemPrompt
 from web.views.friend.message.chat.graph import ChatGraph
+from web.views.friend.message.chat.tts import (
+    build_tencent_stream_url,
+    parse_voice_reference,
+    receive_tencent_audio,
+    send_tencent_text,
+    wait_for_tencent_ready,
+)
 from web.views.friend.message.memory.update import update_memory
 
 
@@ -125,6 +132,52 @@ class MessageChatView(APIView):
 
 
     async def run_tts_tasks(self, app, inputs, mq, voice_id):
+        provider, provider_voice_id = parse_voice_reference(voice_id)
+        if provider == 'tencent':
+            return await self.run_tencent_tts_tasks(
+                app,
+                inputs,
+                mq,
+                provider_voice_id,
+            )
+        return await self.run_aliyun_tts_tasks(
+            app,
+            inputs,
+            mq,
+            provider_voice_id,
+        )
+
+
+    async def run_tencent_tts_tasks(self, app, inputs, mq, voice_id):
+        env_names = (
+            'TENCENT_TTS_APP_ID',
+            'TENCENT_TTS_SECRET_ID',
+            'TENCENT_TTS_SECRET_KEY',
+        )
+        credentials = {name: os.getenv(name) for name in env_names}
+        missing = [name for name, value in credentials.items() if not value]
+        if missing:
+            raise RuntimeError(
+                f"腾讯云语音配置缺失：{', '.join(missing)}"
+            )
+
+        session_id = uuid.uuid4().hex
+        wss_url = build_tencent_stream_url(
+            app_id=credentials['TENCENT_TTS_APP_ID'],
+            secret_id=credentials['TENCENT_TTS_SECRET_ID'],
+            secret_key=credentials['TENCENT_TTS_SECRET_KEY'],
+            voice_id=voice_id,
+            session_id=session_id,
+        )
+        async with websockets.connect(wss_url) as ws:
+            await wait_for_tencent_ready(ws)
+            await asyncio.gather(
+                send_tencent_text(app, inputs, mq, ws, session_id),
+                receive_tencent_audio(mq, ws),
+            )
+
+
+    async def run_aliyun_tts_tasks(self, app, inputs, mq, voice_id):
         task_id = uuid.uuid4().hex
         api_key = os.getenv('API_KEY')
         wss_url = os.getenv('WSS_URL')

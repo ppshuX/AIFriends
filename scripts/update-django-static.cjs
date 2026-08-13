@@ -1,7 +1,7 @@
 /**
  * 构建后脚本：根据 Vite 打包生成的 index.html 中的资源路径，
  * 自动更新 Django 模板 backend/web/templates/index.html 里的 {% static %} 引用。
- * 用法（在项目根目录）：node scripts/update-django-static.js
+ * 用法（在项目根目录）：node scripts/update-django-static.cjs
  */
 
 const fs = require('fs');
