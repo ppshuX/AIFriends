@@ -316,6 +316,10 @@ npm run build
 
 Keep each contribution focused on a verifiable problem. Explain why the change is needed, how it was tested, and what users will notice. Do not commit `.env` files, databases, media uploads, IDE settings, or cloud credentials.
 
+## AI Collaboration Disclosure
+
+OpenAI Codex assisted with parts of this project's repository analysis, implementation support, testing, and documentation. Every change involving Codex was reviewed and verified by the project maintainer, who remains responsible for merge decisions and ongoing maintenance.
+
 ## License
 
 AIFriends is available under the [MIT License](LICENSE).
