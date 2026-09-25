@@ -1,0 +1,116 @@
+name: Release
+
+# 打 tag（v*）触发：在 Windows 构建机上组装便携包、冒烟验证后发布到 GitHub Releases。
+# 注意：tag push 同时也会触发 ci.yml（后端测试 + 前端构建检查），
+# 两者并行执行；如 ci.yml 失败请优先修复，再决定是否重新发布。
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  windows-portable:
+    name: Build and publish Windows portable package
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894585c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      # 仓库默认 platform='cloud'（指向在线站）。便携包必须指向包内 Django 服务，
+      # 因此在构建前切换为 'django'（同源 127.0.0.1:8000，无需 CORS）。
+      - name: Point frontend at local Django server
+        run: |
+          $file = 'frontend/src/js/config/config.js'
+          (Get-Content $file) -replace "const platform = '[^']*'", "const platform = 'django'" |
+            Set-Content -Path $file
+          Select-String -Path $file -Pattern 'const platform'
+
+      - name: Build frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
+      # 产物路径通过 GITHUB_OUTPUT 的 zip-path 输出给后续步骤。
+      - name: Assemble portable package
+        id: assemble
+        run: ./scripts/release/build-portable.ps1 -Version $env:GITHUB_REF_NAME
+
+      # 出厂冒烟测试：模拟用户“解压 -> 双击”的全过程，
+      # 验证密钥生成、migrate、演示内容导入与服务启动，而非只检查文件存在。
+      - name: Smoke test the assembled package
+        run: |
+          $zip = '${{ steps.assemble.outputs.zip-path }}'
+          $smoke = Join-Path $env:RUNNER_TEMP 'smoke'
+          if (Test-Path $smoke) { Remove-Item $smoke -Recurse -Force }
+          New-Item -ItemType Directory -Path $smoke | Out-Null
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          [System.IO.Compression.ZipFile]::ExtractToDirectory($zip, $smoke)
+
+          $pkg = Get-ChildItem -Path $smoke -Directory | Select-Object -First 1
+          if (-not $pkg) { throw '解压后未找到包目录' }
+          $pkgPath = $pkg.FullName
+          Write-Host "包目录：$pkgPath"
+
+          Write-Host '==> 首次初始化（生成密钥、迁移、导入演示内容）'
+          & (Join-Path $pkgPath 'python\python.exe') (Join-Path $pkgPath 'run_server.py') --init-only
+          if ($LASTEXITCODE -ne 0) { throw '--init-only 初始化失败' }
+
+          Write-Host '==> 后台启动服务并探活'
+          $outLog = Join-Path $env:RUNNER_TEMP 'server-out.log'
+          $errLog = Join-Path $env:RUNNER_TEMP 'server-err.log'
+          $proc = Start-Process -FilePath (Join-Path $pkgPath 'python\python.exe') `
+              -ArgumentList 'run_server.py', '--no-browser' `
+              -WorkingDirectory $pkgPath -WindowStyle Hidden `
+              -RedirectStandardOutput $outLog -RedirectStandardError $errLog -PassThru
+          $alive = $false
+          try {
+              foreach ($i in 1..30) {
+                  Start-Sleep -Seconds 2
+                  if ($proc.HasExited) { break }
+                  try {
+                      $resp = Invoke-WebRequest -Uri 'http://127.0.0.1:8000/' -UseBasicParsing -TimeoutSec 5
+                      if ($resp.StatusCode -eq 200) { $alive = $true; break }
+                  } catch { }
+              }
+              if (-not $alive) {
+                  Get-Content $outLog -Tail 40 -ErrorAction SilentlyContinue
+                  Get-Content $errLog -Tail 40 -ErrorAction SilentlyContinue
+                  throw '服务未在 60 秒内返回 HTTP 200'
+              }
+              Write-Host '冒烟测试通过：首页返回 200'
+          } finally {
+              if (-not $proc.HasExited) { Stop-Process -Id $proc.Id -Force }
+          }
+
+      # release 已存在（例如重跑 workflow）时改为追加/覆盖同名产物。
+      - name: Publish to GitHub Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = $env:GITHUB_REF_NAME
+          $zip = '${{ steps.assemble.outputs.zip-path }}'
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -eq 0) {
+              gh release upload $tag $zip --clobber
+          } else {
+              gh release create $tag $zip --generate-notes --title "AIFriends $tag"
+          }

@@ -293,6 +293,25 @@ npm run build
 5. 使用 Gunicorn/uWSGI 托管 Django，由 Nginx 提供 HTTPS、静态文件和媒体文件。
 6. 部署后检查首页、登录、角色对话、模型调用和真实 TTS 音频。
 
+## Windows 便携包
+
+仓库提供一条 tag 驱动的自动发布流程，产出 Windows 便携演示包：接收者解压后双击 `start.bat` 即可在浏览器中使用，无需安装 Python 或 Node.js。AI 密钥在 `backend/.env` 中按需填写，未配置时登录与角色管理仍可正常体验。
+
+```bash
+# 触发 .github/workflows/release.yml，构建、冒烟验证后自动发布到 GitHub Releases
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+- 组装逻辑：`scripts/release/build-portable.ps1`，内含嵌入式 Python 3.12、全部后端依赖、Django 源码与已构建的前端产物。依赖中有大量平台二进制包（pyarrow、lancedb、onnxruntime 等），因此只能在 Windows 构建机上组装，无法从 Linux 交叉打包。
+- 发布前会在 Windows 构建机上对产物做冒烟测试：模拟解压、首次初始化（密钥生成、迁移、导入演示内容）、后台启动并探活首页。
+- 便携包以 `DJANGO_DEBUG=true`、仅监听 `127.0.0.1` 的本地演示模式运行（Django 直接托管前端静态资源与媒体文件），适合分发给他人体验，不能直接暴露到公网。
+- 本地构建（需先在 `frontend/` 下执行 `npm run build`，建议使用 PowerShell 7）：
+
+```bash
+pwsh -File scripts/release/build-portable.ps1 -Version v0.0.0-local
+```
+
 ## 已知边界与安全提醒
 
 - Django 启动要求配置两个不同且至少 50 个字符的随机密钥：`DJANGO_SECRET_KEY` 和 `JWT_SIGNING_KEY`。生产环境还应设置 `DJANGO_DEBUG=false`、实际域名与 CORS 来源，并运行 `python manage.py check --deploy`。
