@@ -1,5 +1,6 @@
 ﻿; AIFriends Windows installer (Inno Setup 6)
 ; 由 build-portable.ps1 调用 ISCC 编译；命令行可覆盖 MyAppVersion / MyAppVersionInfo / SourceDir / OutputDir。
+; 简体中文语言包随仓库 vendored（ChineseSimplified.isl），避免依赖 Chocolatey 是否附带非官方翻译。
 
 #ifndef MyAppVersion
   #define MyAppVersion "dev"
@@ -47,7 +48,8 @@ VersionInfoProductName={#MyAppName}
 VersionInfoProductVersion={#MyAppVersionInfo}
 
 [Languages]
-Name: "chinesesimplified"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
+; ChineseSimplified.isl 与本脚本同目录（仓库内 vendored）
+Name: "chinesesimplified"; MessagesFile: "ChineseSimplified.isl"
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]

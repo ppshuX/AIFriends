@@ -35,6 +35,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       # Inno Setup 6：编译 .exe 安装包（与便携 ZIP 共用同一组装目录）。
+      # 简体中文语言包已 vendored 在 scripts/release/ChineseSimplified.isl。
       - name: Install Inno Setup
         run: choco install innosetup -y --no-progress
 
