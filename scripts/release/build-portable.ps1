@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-  组装 AIFriends Windows 便携发布包。
+  组装 AIFriends Windows 便携发布包，并（可选）编译 Inno Setup 安装包。
 
 .DESCRIPTION
   产出一个解压即用的 ZIP 包，内含：
@@ -10,10 +10,14 @@
   - Django 后端源码（含 Vite 构建好的前端产物 backend/static/frontend/）
   - start.bat 双击入口、run_server.py 初始化逻辑、README.txt 说明
 
+  若本机已安装 Inno Setup 6（ISCC.exe），会额外产出同版本的 .exe 安装包
+  （选择安装目录、开始菜单快捷方式、可选桌面快捷方式、可卸载）。
+
   前置条件：
   1. 已在 frontend/ 下执行 npm run build（产物写入 backend/static/frontend/）；
   2. 构建机已安装 Python 3.12 并可运行 python -m pip（用于把依赖装进包内）；
-  3. 建议用 PowerShell 7（pwsh）运行，避免旧版 Compress-Archive 的限制。
+  3. 建议用 PowerShell 7（pwsh）运行，避免旧版 Compress-Archive 的限制；
+  4. CI 发布需先安装 Inno Setup（choco install innosetup -y）。
 
 .EXAMPLE
   pwsh -File scripts/release/build-portable.ps1 -Version v1.0.0
@@ -23,7 +27,8 @@ param(
     [string]$ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path,
     [string]$WorkDir = '',
     [string]$PythonVersion = '3.12.10',
-    [string]$Version = 'dev'
+    [string]$Version = 'dev',
+    [switch]$SkipInstaller
 )
 
 $ErrorActionPreference = 'Stop'
@@ -117,4 +122,62 @@ Step "完成：$ZipPath（$SizeMB MB）"
 Write-Host "ZIP_PATH=$ZipPath"
 if ($env:GITHUB_OUTPUT) {
     Add-Content -Path $env:GITHUB_OUTPUT -Value "zip-path=$ZipPath"
+}
+
+# ---------- 7. Inno Setup 安装包 ----------
+# 与 ZIP 共用同一 $PkgRoot，保证安装后的文件布局与便携包一致。
+$ExePath = $null
+if (-not $SkipInstaller) {
+    Step '查找 Inno Setup 编译器 (ISCC.exe)...'
+    $IsccCandidates = @(
+        "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+        "${env:ProgramFiles}\Inno Setup 6\ISCC.exe"
+    )
+    $Iscc = $IsccCandidates | Where-Object { $_ -and (Test-Path $_) } | Select-Object -First 1
+
+    if (-not $Iscc) {
+        if ($env:GITHUB_ACTIONS -eq 'true') {
+            throw '未找到 ISCC.exe。请在 workflow 中先执行 choco install innosetup -y。'
+        }
+        Write-Host '未找到 ISCC.exe，跳过安装包编译（本地可用 -SkipInstaller 显式跳过）。' -ForegroundColor Yellow
+    } else {
+        # VersionInfoVersion 需要纯数字 x.y.z[.w]；从 tag 去掉前缀 v 与后缀 -smoke 等。
+        $VersionInfo = ($Version -replace '^v', '') -replace '-.*$', ''
+        if ($VersionInfo -notmatch '^\d+(\.\d+){1,3}$') {
+            $VersionInfo = '0.0.0'
+        }
+
+        $IssFile = Join-Path $PSScriptRoot 'aifriends.iss'
+        if (-not (Test-Path $IssFile)) {
+            throw "未找到 Inno 脚本：$IssFile"
+        }
+
+        Step "用 Inno Setup 编译安装包（AppVersion=$Version, VersionInfo=$VersionInfo）..."
+        # 路径用正斜杠，避免 Inno 预处理器把 \t \n 等当成转义。
+        $SourceDirDef = ($PkgRoot -replace '\\', '/')
+        $OutputDirDef = ($WorkDir -replace '\\', '/')
+        & $Iscc `
+            "/DMyAppVersion=$Version" `
+            "/DMyAppVersionInfo=$VersionInfo" `
+            "/DSourceDir=$SourceDirDef" `
+            "/DOutputDir=$OutputDirDef" `
+            $IssFile
+        if ($LASTEXITCODE -ne 0) { throw "ISCC 编译失败（退出码 $LASTEXITCODE）" }
+
+        $ExePath = Join-Path $WorkDir "$PkgName-setup.exe"
+        if (-not (Test-Path $ExePath)) {
+            throw "ISCC 未产出预期安装包：$ExePath"
+        }
+        $ExeSize = (Get-Item $ExePath).Length
+        if ($ExeSize -lt 1MB) {
+            throw "安装包过小（$ExeSize bytes），疑似编译异常"
+        }
+        $ExeSizeMB = [math]::Round($ExeSize / 1MB)
+        Step "安装包完成：$ExePath（$ExeSizeMB MB）"
+
+        Write-Host "EXE_PATH=$ExePath"
+        if ($env:GITHUB_OUTPUT) {
+            Add-Content -Path $env:GITHUB_OUTPUT -Value "exe-path=$ExePath"
+        }
+    }
 }

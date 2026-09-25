@@ -1,6 +1,6 @@
 name: Release
 
-# 打 tag（v*）触发：在 Windows 构建机上组装便携包、冒烟验证后发布到 GitHub Releases。
+# 打 tag（v*）触发：在 Windows 构建机上组装便携包、安装包、冒烟验证后发布到 GitHub Releases。
 # 注意：tag push 同时也会触发 ci.yml（后端测试 + 前端构建检查），
 # 两者并行执行；如 ci.yml 失败请优先修复，再决定是否重新发布。
 on:
@@ -34,6 +34,10 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
+      # Inno Setup 6：编译 .exe 安装包（与便携 ZIP 共用同一组装目录）。
+      - name: Install Inno Setup
+        run: choco install innosetup -y --no-progress
+
       # 仓库默认 platform='cloud'（指向在线站）。便携包必须指向包内 Django 服务，
       # 因此在构建前切换为 'django'（同源 127.0.0.1:8000，无需 CORS）。
       - name: Point frontend at local Django server
@@ -49,16 +53,25 @@ jobs:
           npm ci
           npm run build
 
-      # 产物路径通过 GITHUB_OUTPUT 的 zip-path 输出给后续步骤。
-      - name: Assemble portable package
+      # 产物路径通过 GITHUB_OUTPUT 的 zip-path / exe-path 输出给后续步骤。
+      - name: Assemble portable package and installer
         id: assemble
         run: ./scripts/release/build-portable.ps1 -Version $env:GITHUB_REF_NAME
 
       # 出厂冒烟测试：模拟用户“解压 -> 双击”的全过程，
       # 验证密钥生成、migrate、演示内容导入与服务启动，而非只检查文件存在。
+      # （安装包本身仅做体积校验，不在 CI 内静默安装。）
       - name: Smoke test the assembled package
         run: |
           $zip = '${{ steps.assemble.outputs.zip-path }}'
+          $exe = '${{ steps.assemble.outputs.exe-path }}'
+          if (-not $exe -or -not (Test-Path $exe)) {
+              throw "未找到安装包产物（exe-path=$exe）"
+          }
+          $exeSize = (Get-Item $exe).Length
+          Write-Host ("安装包：$exe（{0:N1} MB）" -f ($exeSize / 1MB))
+          if ($exeSize -lt 1MB) { throw "安装包过小：$exeSize bytes" }
+
           $smoke = Join-Path $env:RUNNER_TEMP 'smoke'
           if (Test-Path $smoke) { Remove-Item $smoke -Recurse -Force }
           New-Item -ItemType Directory -Path $smoke | Out-Null
@@ -108,9 +121,10 @@ jobs:
         run: |
           $tag = $env:GITHUB_REF_NAME
           $zip = '${{ steps.assemble.outputs.zip-path }}'
+          $exe = '${{ steps.assemble.outputs.exe-path }}'
           gh release view $tag *> $null
           if ($LASTEXITCODE -eq 0) {
-              gh release upload $tag $zip --clobber
+              gh release upload $tag $zip $exe --clobber
           } else {
-              gh release create $tag $zip --generate-notes --title "AIFriends $tag"
+              gh release create $tag $zip $exe --generate-notes --title "AIFriends $tag"
           }
