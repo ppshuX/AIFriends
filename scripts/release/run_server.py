@@ -14,7 +14,6 @@
 import argparse
 import os
 import secrets
-import subprocess
 import sys
 import threading
 import traceback
@@ -79,13 +78,42 @@ def ensure_env():
     ENV_FILE.write_text(content, encoding='utf-8')
 
 
+def _prepare_django():
+    """让嵌入式 Python 能导入 backend.*（._pth 隔离模式下 cwd 不够）。"""
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
+    backend = str(BACKEND_DIR)
+    if backend not in sys.path:
+        sys.path.insert(0, backend)
+
+
 def run_manage(*args):
-    result = subprocess.run(
-        [sys.executable, 'manage.py', *args],
-        cwd=BACKEND_DIR,
-    )
-    if result.returncode != 0:
-        raise RuntimeError(f'manage.py {" ".join(args)} 失败，退出码 {result.returncode}')
+    """在进程内执行 manage 命令。
+
+    不能用子进程直接跑 manage.py：嵌入版 Python 的 ._pth 会忽略 PYTHONPATH，
+    子进程里找不到名为 backend 的包（ModuleNotFoundError）。
+    """
+    _prepare_django()
+    prev = os.getcwd()
+    try:
+        os.chdir(BACKEND_DIR)
+        import django
+        django.setup()
+        from django.core.management import call_command
+
+        cmd, *rest = args
+        kwargs = {}
+        positional = []
+        for item in rest:
+            if item in ('--noinput', '--no-input'):
+                kwargs['interactive'] = False
+            elif item.startswith('--'):
+                key = item.lstrip('-').replace('-', '_')
+                kwargs[key] = True
+            else:
+                positional.append(item)
+        call_command(cmd, *positional, **kwargs)
+    finally:
+        os.chdir(prev)
 
 
 def initialize():
@@ -100,8 +128,7 @@ def initialize():
 
 
 def serve(open_browser):
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
-    sys.path.insert(0, str(BACKEND_DIR))
+    _prepare_django()
     # 项目内多处使用相对路径（如 LanceDB 的 ./web/documents/lancedb_storage），
     # 约定进程工作目录与“在 backend 目录下运行”保持一致。
     os.chdir(BACKEND_DIR)

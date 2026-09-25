@@ -69,6 +69,8 @@ $PthFile = Join-Path $PythonDir "python$PyMinor`._pth"
     "python$PyMinor.zip"
     '.'
     'Lib\site-packages'
+    # Django 项目包在 ..\backend\backend；加入后 import backend 才能解析
+    '..\backend'
     'import site'
 ) | Set-Content -Path $PthFile -Encoding ascii
 
