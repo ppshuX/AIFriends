@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 from django.core.exceptions import ImproperlyConfigured
@@ -19,7 +20,12 @@ from backend.env import get_bool, get_csv, get_required_secret
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(BASE_DIR / '.env')
+
+# 可写数据目录：便携包/安装包由 run_server.py 设置 AIFRIENDS_DATA_DIR。
+# 未设置时保持仓库本地开发默认（backend/ 下的 .env、db、media）。
+_data_dir_raw = os.getenv('AIFRIENDS_DATA_DIR', '').strip()
+DATA_DIR = Path(_data_dir_raw).expanduser().resolve() if _data_dir_raw else BASE_DIR
+load_dotenv(DATA_DIR / '.env')
 
 
 # Quick-start development settings - unsuitable for production
@@ -94,7 +100,7 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': DATA_DIR / 'db.sqlite3',
     }
 }
 
@@ -147,7 +153,7 @@ STATICFILES_DIRS = [  # 开发阶段使用；生产时 collectstatic 会把这�
 
 # 使用相对路径，本地与线上均按当前域名访问 /media/
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = DATA_DIR / 'media'
 
 
 # 使用JWT认证

@@ -1,9 +1,14 @@
 """AIFriends Windows 便携包启动入口。
 
 首次运行会自动完成：
-1. 生成 backend/.env（两个独立的 >=50 字符随机签名密钥，满足启动校验）
+1. 生成 .env（两个独立的 >=50 字符随机签名密钥，满足启动校验）
 2. 执行数据库迁移；db.sqlite3 不存在时额外导入官方演示角色
 3. 用 waitress 在 127.0.0.1:8000 托管整个应用（含前端静态资源与媒体文件）
+
+数据目录策略：
+- 若包内 backend/ 可写（解压到任意目录的便携用法），状态直接写在 backend/
+- 若不可写（例如安装到 Program Files），改用 %LOCALAPPDATA%\\AIFriends\\
+- 也可手动设置环境变量 AIFRIENDS_DATA_DIR 覆盖上述逻辑
 
 用法：
     python run_server.py              # 完整启动并自动打开浏览器
@@ -27,8 +32,6 @@ HOME_URL = f'http://{HOST}:{PORT}/'
 
 PKG_ROOT = Path(__file__).resolve().parent
 BACKEND_DIR = PKG_ROOT / 'backend'
-ENV_FILE = BACKEND_DIR / '.env'
-DB_FILE = BACKEND_DIR / 'db.sqlite3'
 
 # 注意：本模板用 str.format 注入占位符，除命名占位符外不要出现裸花括号。
 ENV_TEMPLATE = """\
@@ -60,22 +63,59 @@ def log(message):
     print(f'[AIFriends] {message}', flush=True)
 
 
-def ensure_env():
+def _dir_is_writable(path: Path) -> bool:
+    """探测目录是否可写（Program Files 等受保护目录会失败）。"""
+    try:
+        path.mkdir(parents=True, exist_ok=True)
+        probe = path / ('.aifriends_write_probe_' + str(os.getpid()))
+        probe.write_text('ok', encoding='utf-8')
+        probe.unlink(missing_ok=True)
+        return True
+    except OSError:
+        return False
+
+
+def resolve_data_dir() -> Path:
+    """解析可写数据目录：显式覆盖 > 包内 backend > LocalAppData。"""
+    override = os.environ.get('AIFRIENDS_DATA_DIR', '').strip()
+    if override:
+        data = Path(override).expanduser()
+        data.mkdir(parents=True, exist_ok=True)
+        return data.resolve()
+
+    if _dir_is_writable(BACKEND_DIR):
+        return BACKEND_DIR.resolve()
+
+    local_app = os.environ.get('LOCALAPPDATA')
+    if not local_app:
+        local_app = str(Path.home() / 'AppData' / 'Local')
+    data = Path(local_app) / 'AIFriends'
+    data.mkdir(parents=True, exist_ok=True)
+    return data.resolve()
+
+
+def apply_data_dir(data_dir: Path) -> None:
+    """把数据目录写入环境变量，供 Django settings 在 setup 前读取。"""
+    os.environ['AIFRIENDS_DATA_DIR'] = str(data_dir)
+    (data_dir / 'media').mkdir(parents=True, exist_ok=True)
+
+
+def ensure_env(env_file: Path):
     """首次运行时生成本机专属的 .env。
 
     backend/backend/env.py 要求 DJANGO_SECRET_KEY 与 JWT_SIGNING_KEY 互不相同
     且均不少于 50 个字符，secrets.token_urlsafe(64) 恒满足该约束。
     """
-    if ENV_FILE.exists():
+    if env_file.exists():
         return
-    log('首次运行：正在生成配置文件 backend/.env ...')
+    log(f'首次运行：正在生成配置文件 {env_file} ...')
     content = ENV_TEMPLATE.format(
         django_secret=secrets.token_urlsafe(64),
         jwt_secret=secrets.token_urlsafe(64),
         host=HOST,
         port=PORT,
     )
-    ENV_FILE.write_text(content, encoding='utf-8')
+    env_file.write_text(content, encoding='utf-8')
 
 
 def _prepare_django():
@@ -116,9 +156,11 @@ def run_manage(*args):
         os.chdir(prev)
 
 
-def initialize():
-    ensure_env()
-    fresh_db = not DB_FILE.exists()
+def initialize(data_dir: Path):
+    env_file = data_dir / '.env'
+    db_file = data_dir / 'db.sqlite3'
+    ensure_env(env_file)
+    fresh_db = not db_file.exists()
     # migrate 幂等：首次建库；用户覆盖升级解压时也能补齐新增迁移
     log('检查数据库迁移 ...')
     run_manage('migrate', '--noinput')
@@ -156,7 +198,10 @@ def main():
     args = parser.parse_args()
 
     log('正在准备运行环境 ...')
-    initialize()
+    data_dir = resolve_data_dir()
+    apply_data_dir(data_dir)
+    log(f'数据目录：{data_dir}')
+    initialize(data_dir)
     if args.init_only:
         log('初始化完成（--init-only）')
         return
@@ -172,5 +217,5 @@ if __name__ == '__main__':
         traceback.print_exc()
         # 双击运行出错时留住窗口，方便看到错误信息
         if sys.stdin is not None and sys.stdin.isatty():
-            input('\n按回车键关闭窗口...')
+            input('\\n按回车键关闭窗口...')
         raise
