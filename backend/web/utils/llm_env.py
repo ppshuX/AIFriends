@@ -9,6 +9,17 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 DEFAULT_API_BASE = "https://tokenhub.tencentmaas.com/v1"
+
+TOKENHUB_MODEL = "deepseek-v4-flash-202605"
+DEEPSEEK_MODEL = "deepseek-flash"
+
+
+def chat_model_name():
+    """官方 DeepSeek 与 TokenHub 的模型名不一样。"""
+    host = (urlparse(os.getenv("API_BASE", "")).hostname or "").lower()
+    if host == "api.deepseek.com" or host.endswith(".deepseek.com"):
+        return DEEPSEEK_MODEL
+    return TOKENHUB_MODEL
 _MAX_KEY_LEN = 512
 _MAX_BASE_LEN = 300
 _KEY_FORBIDDEN = set(" \t\"'`#\\")

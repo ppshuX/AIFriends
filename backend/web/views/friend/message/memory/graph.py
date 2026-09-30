@@ -1,4 +1,6 @@
 import os
+
+from web.utils.llm_env import chat_model_name
 from typing import TypedDict, Annotated, Sequence
 
 from langchain_core.messages import BaseMessage
@@ -11,7 +13,7 @@ class MemoryGraph:
     @staticmethod
     def create_app():
         llm = ChatOpenAI(
-            model='deepseek-v4-flash-202605',
+            model=chat_model_name(),
             openai_api_key=os.getenv('API_KEY'),
             openai_api_base=os.getenv('API_BASE'),
         )
