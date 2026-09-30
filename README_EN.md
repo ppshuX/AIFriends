@@ -18,7 +18,7 @@ The repository began as an LLM application development course project and has no
 
 - Create, edit, delete, share, and befriend AI characters
 - Configure avatars, chat backgrounds, personalities, system prompts, and voices
-- Stream character responses from `deepseek-v4-flash-202605`
+- Stream character responses from `deepseek-flash`
 - Call LangGraph tools for time lookup and LanceDB knowledge retrieval
 - Include recent messages and update long-term character memory
 - Authenticate with JWT login, registration, token refresh, and profile management
@@ -32,7 +32,7 @@ This maintenance cycle includes the following changes:
 
 - Added Tencent Cloud streaming text-to-speech with signed requests, READY/FINAL event handling, and MP3 chunk delivery.
 - Preserved voice compatibility: `tencent:<VoiceType>` selects Tencent Cloud, while `aliyun:<voice>` and unprefixed legacy values continue to use Alibaba Cloud.
-- Updated character chat and memory generation to the active TokenHub model, `deepseek-v4-flash-202605`.
+- Updated character chat and memory generation to the active TokenHub model, `deepseek-flash`.
 - Added four official demo characters, four Tencent Cloud voices, a default avatar, character artwork, and baseline system prompts.
 - Fixed the post-build Django template updater for an ESM frontend package.
 - Added model configuration, Tencent TTS protocol, demo seeding, security configuration, and authentication cookie tests. The backend suite currently contains 27 tests.

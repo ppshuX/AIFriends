@@ -12,7 +12,6 @@ from langgraph.graph import add_messages, StateGraph
 from langgraph.prebuilt import ToolNode
 
 from web.documents.utils.custom_embeddings import CustomEmbeddings
-from web.utils.llm_env import chat_model_name
 
 
 class ChatGraph:
@@ -42,7 +41,7 @@ class ChatGraph:
         tools = [get_time, search_knowledge_base]
 
         llm = ChatOpenAI(
-            model=chat_model_name(),
+            model='deepseek-flash',
             openai_api_key=os.getenv('API_KEY'),
             openai_api_base=os.getenv('API_BASE'),
             streaming=True,

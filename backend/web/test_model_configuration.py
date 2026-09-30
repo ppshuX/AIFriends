@@ -6,7 +6,7 @@ from web.views.friend.message.chat.graph import ChatGraph
 from web.views.friend.message.memory.graph import MemoryGraph
 
 
-TOKENHUB_MODEL = 'deepseek-v4-flash-202605'
+TOKENHUB_MODEL = 'deepseek-flash'
 
 
 class TokenHubModelConfigurationTests(SimpleTestCase):
