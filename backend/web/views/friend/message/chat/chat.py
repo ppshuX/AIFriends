@@ -7,7 +7,7 @@ import uuid
 from queue import Queue
 
 import websockets
-from django.http import StreamingHttpResponse
+from django.http import JsonResponse, StreamingHttpResponse
 from langchain_core.messages import HumanMessage, BaseMessageChunk, SystemMessage, AIMessage
 from rest_framework.renderers import BaseRenderer
 from rest_framework.views import APIView
@@ -24,6 +24,7 @@ from web.views.friend.message.chat.tts import (
     wait_for_tencent_ready,
 )
 from web.views.friend.message.memory.update import update_memory
+from web.utils.llm_env import api_key_configured
 
 
 class SSERenderer(BaseRenderer):
@@ -59,6 +60,12 @@ class MessageChatView(APIView):
     permission_classes = [IsAuthenticated]
     renderer_classes = [SSERenderer]
     def post(self, request):
+        if not api_key_configured():
+            return JsonResponse({
+                'result': '请先配置 API Key',
+                'code': 'api_key_missing',
+                'detail': '请先配置 API Key',
+            }, status=400)
         friend_id = request.data['friend_id']
         message = request.data['message'].strip()
         if not message:
